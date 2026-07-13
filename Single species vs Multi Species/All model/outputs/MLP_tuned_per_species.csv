@@ -1,0 +1,9 @@
+species,n_train,n_pos_train,log_loss_single_tuned,best_params_single,log_loss_multi_tuned
+Cacophis kreftii,513,16,0.11700235523238159,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.1532420211442411
+Calyptotis scutirostrum,513,40,0.3891171340862235,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.3391474082498497
+Coeranoscincus reticulatus,513,83,0.5731531059880355,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.33674605699741345
+Egernia mcpheei,513,10,0.07389311197827009,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.10004403134235634
+Eulamprus murrayi,512,2,0.04458226382753459,defaults (too few positives to tune),0.08607040706057362
+Ophioscincus truncatus,513,91,0.6194420240760588,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.5467223536084826
+Pseudechis porphyricaus,513,11,0.08245032257978516,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.08967016774741904
+Saltuarius swaini,512,6,0.11230085261134218,"{'clf__learning_rate_init': 0.0005, 'clf__hidden_layer_sizes': (32, 16), 'clf__alpha': 0.004641588833612777}",0.20995450735576224

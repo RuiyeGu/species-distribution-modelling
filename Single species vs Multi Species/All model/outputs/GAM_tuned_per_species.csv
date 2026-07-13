@@ -1,0 +1,9 @@
+species,n_train,n_pos_train,log_loss_single_tuned,best_params_single,log_loss_multi_tuned
+Cacophis kreftii,513,16,0.10355840865223823,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.12474496821160354
+Calyptotis scutirostrum,513,40,0.24574000520585318,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.3521731024252418
+Coeranoscincus reticulatus,513,83,0.33433623512846805,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.3853949180329899
+Egernia mcpheei,513,10,0.1911865748303076,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.14342307901698712
+Eulamprus murrayi,512,2,0.11848915781272337,defaults (too few positives to tune),0.03324603239210872
+Ophioscincus truncatus,513,91,0.4850918055812412,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.4495038903024554
+Pseudechis porphyricaus,513,11,0.15615778906291694,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.1136795748024175
+Saltuarius swaini,512,6,0.20967809975271332,"{'clf__n_splines': 20, 'clf__lam': 0.01}",0.21735141141453787

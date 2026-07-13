@@ -1,0 +1,9 @@
+species,n_train,n_pos_train,log_loss_single_tuned,best_params_single,log_loss_multi_tuned
+Cacophis kreftii,513,16,0.09731282499748012,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.09972701092995759
+Calyptotis scutirostrum,513,40,0.1889225848962957,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.187604612538054
+Coeranoscincus reticulatus,513,83,0.28204436696441065,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.28674271927138817
+Egernia mcpheei,513,10,0.07774537034940016,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.08953773507188298
+Eulamprus murrayi,512,2,0.046869430678953584,defaults (too few positives to tune),0.03929763933532275
+Ophioscincus truncatus,513,91,0.3913712566745493,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.3904254922752573
+Pseudechis porphyricaus,513,11,0.08781077080252322,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.10056475180159412
+Saltuarius swaini,512,6,0.07947635160532261,"{'clf__subsample': 0.6, 'clf__n_estimators': 300, 'clf__max_depth': 6, 'clf__learning_rate': 0.01, 'clf__colsample_bytree': 0.8}",0.09228449219161855
