@@ -1,0 +1,17 @@
+Species,class,total,train,test
+Cacophis kreftii,negative,621,497,124
+Cacophis kreftii,positive,20,15,5
+Calyptotis scutirostrum,negative,591,472,119
+Calyptotis scutirostrum,positive,50,40,10
+Coeranoscincus reticulatus,negative,537,429,108
+Coeranoscincus reticulatus,positive,104,83,21
+Egernia mcpheei,negative,629,501,128
+Egernia mcpheei,positive,12,11,1
+Eulamprus murrayi,negative,638,509,129
+Eulamprus murrayi,positive,3,3,0
+Ophioscincus truncatus,negative,527,421,106
+Ophioscincus truncatus,positive,114,91,23
+Pseudechis porphyricaus,negative,627,501,126
+Pseudechis porphyricaus,positive,14,11,3
+Saltuarius swaini,negative,633,506,127
+Saltuarius swaini,positive,8,6,2
