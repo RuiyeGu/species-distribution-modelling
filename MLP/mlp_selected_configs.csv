@@ -1,0 +1,11 @@
+,hidden_layer_sizes,alpha,learning_rate_init
+multi_shared_trunk,"(16,)",0.1,0.001
+multi_int_pooled,"(8,)",0.1,0.001
+single::Eulamprus murrayi,"(16, 8)",0.1,0.001
+single::Saltuarius swaini,"(16,)",0.0001,0.001
+single::Egernia mcpheei,"(16, 8)",0.1,0.01
+single::Pseudechis porphyricaus,"(16,)",0.1,0.01
+single::Cacophis kreftii,"(32,)",0.1,0.001
+single::Calyptotis scutirostrum,"(16,)",0.1,0.001
+single::Coeranoscincus reticulatus,"(8,)",0.1,0.01
+single::Ophioscincus truncatus,"(8,)",0.1,0.001
