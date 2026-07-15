@@ -1,0 +1,11 @@
+approach,species,n_knots,C,class_weight
+single_species,Cacophis kreftii,8,0.5,
+single_species,Calyptotis scutirostrum,8,0.5,
+single_species,Coeranoscincus reticulatus,8,0.5,
+single_species,Egernia mcpheei,8,0.5,
+single_species,Eulamprus murrayi,6,0.1,
+single_species,Ophioscincus truncatus,8,0.5,
+single_species,Pseudechis porphyricaus,4,0.5,
+single_species,Saltuarius swaini,4,0.1,
+multi_species,ALL,6,0.5,
+multi_interactions,ALL,6,0.5,
