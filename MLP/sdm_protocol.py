@@ -1,28 +1,3 @@
-"""
-sdm_protocol.py  (Option B — loads the team's canonical plot-level split)
-=========================================================================
-SHARED EXPERIMENTAL PROTOCOL for the EcoStat Modelling thesis.
-
-CHANGE FROM EARLIER VERSIONS
-----------------------------
-This version no longer creates its own train/test split. It LOADS the team's
-canonical plot-level split (Ang's), so every model — MLP, RF, XGBoost, LR, GAM —
-is evaluated on the identical held-out plots. That is what makes the Direction A
-comparison valid.
-
-  * TEST plots come from test_plotlevel.csv  (fixed, shared, never used to tune).
-  * DEV  plots come from train_plotlevel.csv (all tuning happens here).
-  * CV folds (random AND spatial) are built ON THE DEV PLOTS ONLY, so the test
-    set is never touched during cross-validation. Random vs spatial is the
-    Direction E comparison; both ride on the same dev plots.
-
-The files are named unambiguously (train_plotlevel / test_plotlevel) on purpose:
-two teammates previously wrote different splits to the same `train_split.csv`
-name, which is how a row-level (leaky) file ended up in circulation. Load only
-the plot-level files here.
-
-The data has 8 species per plot, so the wide pivot is clean (no NaN).
-"""
 
 import json
 import numpy as np
@@ -144,7 +119,7 @@ def evaluate(y_true, y_prob, threshold=0.5):
     y_prob = np.clip(np.asarray(y_prob, float), EPS, 1 - EPS)
     y_pred = (y_prob >= threshold).astype(int)
     out = {"n": len(y_true), "n_pos": int(y_true.sum()),
-           "prevalence": float(y_true.mean())}
+           "prevalence": float(y_true.mean()), "threshold": float(threshold)}
     try:
         out["log_loss"] = log_loss(y_true, y_prob, labels=[0, 1])
     except Exception:
@@ -160,7 +135,15 @@ def evaluate(y_true, y_prob, threshold=0.5):
 
 
 def evaluate_all_species(y_true_df, y_prob_df, threshold=0.5):
-    rows = {sp: evaluate(y_true_df[sp].values, y_prob_df[sp].values, threshold)
+    """`threshold` is either one cutoff used for every species, or a
+    {species: cutoff} mapping. The cutoff actually applied comes back in the
+    'threshold' column, so a reported F1 can always be traced to its cutoff."""
+    def cutoff(sp):
+        if isinstance(threshold, (dict, pd.Series)):
+            return float(threshold[sp])
+        return float(threshold)
+
+    rows = {sp: evaluate(y_true_df[sp].values, y_prob_df[sp].values, cutoff(sp))
             for sp in SPECIES}
     res = pd.DataFrame(rows).T
     mc = ["log_loss", "brier", "auc", "f1", "sensitivity", "specificity"]
