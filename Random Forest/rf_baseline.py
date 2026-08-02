@@ -2,21 +2,23 @@
 Random Forest baseline for the DATA5925 reptile SDM project.
 
 This script:
-  1. Loads train.csv and test.csv.
-  2. Uses plot-level grouped train/validation split to avoid spatial leakage.
-  3. Trains one Random Forest classifier per species (single-species approach).
-  4. Handles severe class imbalance with class_weight='balanced'.
-  5. Evaluates with log loss, AUC-ROC, Brier score, F1, sensitivity, specificity.
-  6. Produces a Kaggle-ready submission file.
+  1. Loads the team's canonical plot-level split
+     (MLP/train_plotlevel.csv and MLP/test_plotlevel.csv).
+  2. Trains one Random Forest classifier per species (single-species approach).
+  3. Handles severe class imbalance with class_weight='balanced'.
+  4. Evaluates with log loss, AUC-ROC, Brier score, F1, sensitivity, specificity.
+  5. Produces a Kaggle-ready submission file.
 
-Run from the project root with the virtual environment activated:
-    source .venv_pydata/bin/activate
-    python src/rf_baseline.py
+The canonical split is maintained by the team in the MLP folder; do not
+re-split the data here, so that all team models are evaluated identically.
+
+Run from the repository root with the virtual environment activated:
+    cd "Random Forest"
+    python rf_baseline.py
 
 Author: EcoStat Modelling
 """
 
-import os
 import warnings
 from pathlib import Path
 
@@ -30,32 +32,43 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix,
 )
-from sklearn.model_selection import GroupShuffleSplit
 
 warnings.filterwarnings("ignore")
 
 # ---------------------------------------------------------------------------
 # 1. Paths
 # ---------------------------------------------------------------------------
-ROOT = Path(__file__).resolve().parent.parent  # project root
-DATA_DIR = ROOT / "predicting-small-reptile-species-distributions-in-nsw"
-OUT_DIR = ROOT / "outputs"
-OUT_DIR.mkdir(exist_ok=True)
+SCRIPT_DIR = Path(__file__).resolve().parent          # Random Forest/
+REPO_ROOT = SCRIPT_DIR.parent                          # repo root
+PROJECT_ROOT = REPO_ROOT.parent                        # DATA5905 root
+DATA_DIR = PROJECT_ROOT / "predicting-small-reptile-species-distributions-in-nsw"
 
-TRAIN_PATH = DATA_DIR / "train.csv"
-TEST_PATH = DATA_DIR / "test.csv"
-SUBMISSION_PATH = OUT_DIR / "submission_rf_baseline.csv"
+# Canonical team split (maintained in the MLP folder)
+TRAIN_PATH = REPO_ROOT / "MLP" / "train_plotlevel.csv"
+TEST_PATH = REPO_ROOT / "MLP" / "test_plotlevel.csv"
+
+KAGGLE_TEST_PATH = DATA_DIR / "test.csv"
+SUBMISSION_PATH = SCRIPT_DIR / "submission_rf_baseline.csv"
+SUMMARY_PATH = SCRIPT_DIR / "split_summary.csv"
 
 # ---------------------------------------------------------------------------
-# 2. Load data
+# 2. Load the canonical plot-level split
 # ---------------------------------------------------------------------------
-train = pd.read_csv(TRAIN_PATH)
-test = pd.read_csv(TEST_PATH)
+train_df = pd.read_csv(TRAIN_PATH)
+val_df = pd.read_csv(TEST_PATH)
+test = pd.read_csv(KAGGLE_TEST_PATH)
 
-print("Train shape:", train.shape)
-print("Test shape:", test.shape)
-print("Species:", train["Species"].unique())
-print("Overall presence rate: {:.4f}".format(train["pres.abs"].mean()))
+print("Train shape:", train_df.shape)
+print("Validation shape:", val_df.shape)
+print("Kaggle test shape:", test.shape)
+print("Species:", sorted(train_df["Species"].unique()))
+print(
+    "Plot-level split -> train plots: {}, val plots: {} (overlap: {})".format(
+        train_df["plot"].nunique(),
+        val_df["plot"].nunique(),
+        len(set(train_df["plot"]) & set(val_df["plot"])),
+    )
+)
 
 # ---------------------------------------------------------------------------
 # 3. Feature selection
@@ -77,33 +90,17 @@ TARGET_COL = "pres.abs"
 GROUP_COL = "plot"
 SPECIES_COL = "Species"
 
-# ---------------------------------------------------------------------------
-# 4. Plot-level train / validation split
-# ---------------------------------------------------------------------------
-# Because the same plot contains 8 species rows, splitting by row would leak
-# spatial information. We split by plot (GROUP_COL).
-species_list = sorted(train[SPECIES_COL].unique())
-
-splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-train_idx, val_idx = next(splitter.split(train, groups=train[GROUP_COL]))
-
-train_df = train.iloc[train_idx].copy()
-val_df = train.iloc[val_idx].copy()
-
-print(
-    "Plot-level split -> train plots: {}, val plots: {}".format(
-        train_df[GROUP_COL].nunique(), val_df[GROUP_COL].nunique()
-    )
-)
+species_list = sorted(train_df[SPECIES_COL].unique())
 
 # ---------------------------------------------------------------------------
-# 4b. Split summary report (matches team convention)
+# 3b. Split summary report (matches team convention)
 # ---------------------------------------------------------------------------
+full = pd.concat([train_df, val_df], ignore_index=True)
 print(f"\nSplit summary (rows per species and class):")
 summary_rows = []
 for sp in species_list:
     for cls, label in [(0, "negative"), (1, "positive")]:
-        total = int(((train[SPECIES_COL] == sp) & (train[TARGET_COL] == cls)).sum())
+        total = int(((full[SPECIES_COL] == sp) & (full[TARGET_COL] == cls)).sum())
         tr_n = int(((train_df[SPECIES_COL] == sp) & (train_df[TARGET_COL] == cls)).sum())
         va_n = int(((val_df[SPECIES_COL] == sp) & (val_df[TARGET_COL] == cls)).sum())
         summary_rows.append(
@@ -111,25 +108,16 @@ for sp in species_list:
         )
 summary_df = pd.DataFrame(summary_rows)
 print(summary_df.to_string(index=False))
+summary_df.to_csv(SUMMARY_PATH, index=False)
+print(f"Saved {SUMMARY_PATH.name}")
 
-# Save the split summary table for reporting / sharing with the team
-summary_df.to_csv(OUT_DIR / "split_summary.csv", index=False)
-print("Saved split_summary.csv")
-
-tr_pres = train_df[TARGET_COL].mean()
-va_pres = val_df[TARGET_COL].mean()
 print(
-    f"\nTotal -> train: {len(train_df)} rows (presence rate {tr_pres:.4f}), "
-    f"test: {len(val_df)} rows (presence rate {va_pres:.4f})"
+    f"\nTotal -> train: {len(train_df)} rows (presence rate {train_df[TARGET_COL].mean():.4f}), "
+    f"test: {len(val_df)} rows (presence rate {val_df[TARGET_COL].mean():.4f})"
 )
 
-# Save the split for reproducibility and team-wide consistency
-train_df.to_csv(OUT_DIR / "train_split.csv", index=False)
-val_df.to_csv(OUT_DIR / "test_split.csv", index=False)
-print("\nSaved train_split.csv and test_split.csv")
-
 # ---------------------------------------------------------------------------
-# 5. Train one Random Forest per species
+# 4. Train one Random Forest per species
 # ---------------------------------------------------------------------------
 val_predictions = []
 species_results = []
@@ -194,7 +182,7 @@ for sp in species_list:
     )
 
 # ---------------------------------------------------------------------------
-# 6. Aggregate validation performance
+# 5. Aggregate validation performance
 # ---------------------------------------------------------------------------
 val_all = pd.concat(val_predictions, ignore_index=True)
 y_true_all = val_all[TARGET_COL]
@@ -205,7 +193,7 @@ overall_auc = roc_auc_score(y_true_all, y_prob_all)
 overall_brier = brier_score_loss(y_true_all, y_prob_all)
 
 print("\n" + "=" * 60)
-print("Overall validation performance (plot-level split)")
+print("Overall validation performance (canonical plot-level split)")
 print("=" * 60)
 print(f"Log loss      : {overall_log_loss:.5f}")
 print(f"AUC-ROC       : {overall_auc:.4f}")
@@ -216,7 +204,7 @@ print("\nPer-species summary:")
 print(results_df.to_string(index=False))
 
 # ---------------------------------------------------------------------------
-# 7. Kaggle submission
+# 6. Kaggle submission
 # ---------------------------------------------------------------------------
 submission_probs = []
 for sp in species_list:

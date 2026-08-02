@@ -1,12 +1,16 @@
 """
 Multi-species Random Forest for the DATA5925 reptile SDM project.
 
-This script compares three Random Forest strategies on the same plot-level split:
+This script compares three Random Forest strategies on the team's canonical
+plot-level split (MLP/train_plotlevel.csv and MLP/test_plotlevel.csv):
   1. Single-species: one RF per species (baseline).
   2. Multi-species (one-hot): one RF trained on all species with Species one-hot encoded.
   3. Multi-species (interactions): one-hot Species plus Species x feature interactions.
 
-All approaches are evaluated on the same held-out validation set for fair comparison.
+All approaches are evaluated on the same held-out test set for fair comparison.
+
+The canonical split is maintained by the team in the MLP folder; do not
+re-split the data here, so that all team models are evaluated identically.
 
 Run from the repository root with the virtual environment activated:
     cd "Random Forest"
@@ -15,7 +19,6 @@ Run from the repository root with the virtual environment activated:
 Author: EcoStat Modelling
 """
 
-import os
 import warnings
 from pathlib import Path
 
@@ -26,10 +29,7 @@ from sklearn.metrics import (
     log_loss,
     roc_auc_score,
     brier_score_loss,
-    f1_score,
-    confusion_matrix,
 )
-from sklearn.model_selection import GroupShuffleSplit
 
 warnings.filterwarnings("ignore")
 
@@ -38,28 +38,39 @@ warnings.filterwarnings("ignore")
 # ---------------------------------------------------------------------------
 # This script lives in species-distribution-modelling/Random Forest/.
 # The Kaggle data lives in the parent DATA5905 folder.
-REPO_ROOT = Path(__file__).resolve().parent.parent  # repo root
-PROJECT_ROOT = REPO_ROOT.parent  # DATA5905 root
+SCRIPT_DIR = Path(__file__).resolve().parent          # Random Forest/
+REPO_ROOT = SCRIPT_DIR.parent                          # repo root
+PROJECT_ROOT = REPO_ROOT.parent                        # DATA5905 root
 DATA_DIR = PROJECT_ROOT / "predicting-small-reptile-species-distributions-in-nsw"
-OUT_DIR = PROJECT_ROOT / "outputs"
-OUT_DIR.mkdir(exist_ok=True)
 
-TRAIN_PATH = DATA_DIR / "train.csv"
-TEST_PATH = DATA_DIR / "test.csv"
-RESULTS_PATH = OUT_DIR / "rf_single_vs_multi_results.csv"
-SUBMISSION_SINGLE_PATH = OUT_DIR / "submission_rf_single_species.csv"
-SUBMISSION_MULTI_PATH = OUT_DIR / "submission_rf_multi_species.csv"
+# Canonical team split (maintained in the MLP folder)
+TRAIN_PATH = REPO_ROOT / "MLP" / "train_plotlevel.csv"
+TEST_PATH = REPO_ROOT / "MLP" / "test_plotlevel.csv"
+
+KAGGLE_TEST_PATH = DATA_DIR / "test.csv"
+RESULTS_PATH = SCRIPT_DIR / "rf_single_vs_multi_results.csv"
+SUBMISSION_SINGLE_PATH = SCRIPT_DIR / "submission_rf_single_species.csv"
+SUBMISSION_MULTI_PATH = SCRIPT_DIR / "submission_rf_multi_species.csv"
 
 # ---------------------------------------------------------------------------
-# 2. Load data
+# 2. Load the canonical plot-level split
 # ---------------------------------------------------------------------------
-train = pd.read_csv(TRAIN_PATH)
-test = pd.read_csv(TEST_PATH)
+train_df = pd.read_csv(TRAIN_PATH)
+val_df = pd.read_csv(TEST_PATH)
+test = pd.read_csv(KAGGLE_TEST_PATH)
 
-print("Train shape:", train.shape)
-print("Test shape:", test.shape)
-print("Species:", sorted(train["Species"].unique()))
-print("Overall presence rate: {:.4f}".format(train["pres.abs"].mean()))
+print("Train shape:", train_df.shape)
+print("Validation shape:", val_df.shape)
+print("Kaggle test shape:", test.shape)
+print("Species:", sorted(train_df["Species"].unique()))
+print("Overall presence rate: {:.4f}".format(train_df["pres.abs"].mean()))
+print(
+    "Plot-level split -> train plots: {}, val plots: {} (overlap: {})".format(
+        train_df["plot"].nunique(),
+        val_df["plot"].nunique(),
+        len(set(train_df["plot"]) & set(val_df["plot"])),
+    )
+)
 
 # ---------------------------------------------------------------------------
 # 3. Feature selection
@@ -78,25 +89,10 @@ TARGET_COL = "pres.abs"
 GROUP_COL = "plot"
 SPECIES_COL = "Species"
 
-species_list = sorted(train[SPECIES_COL].unique())
+species_list = sorted(train_df[SPECIES_COL].unique())
 
 # ---------------------------------------------------------------------------
-# 4. Plot-level train / validation split
-# ---------------------------------------------------------------------------
-splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-train_idx, val_idx = next(splitter.split(train, groups=train[GROUP_COL]))
-
-train_df = train.iloc[train_idx].copy()
-val_df = train.iloc[val_idx].copy()
-
-print(
-    "Plot-level split -> train plots: {}, val plots: {}".format(
-        train_df[GROUP_COL].nunique(), val_df[GROUP_COL].nunique()
-    )
-)
-
-# ---------------------------------------------------------------------------
-# 5. Feature builders
+# 4. Feature builders
 # ---------------------------------------------------------------------------
 def build_single_species_X(df):
     """Numeric features only (used in per-species models)."""
@@ -133,7 +129,7 @@ def get_common_rf():
 
 
 # ---------------------------------------------------------------------------
-# 6. Strategy 1: Single-species Random Forest
+# 5. Strategy 1: Single-species Random Forest
 # ---------------------------------------------------------------------------
 single_models = {}
 single_val_probs = np.zeros(len(val_df))
@@ -167,7 +163,7 @@ print(f"Overall AUC-ROC : {single_auc:.4f}")
 print(f"Overall Brier   : {single_brier:.4f}")
 
 # ---------------------------------------------------------------------------
-# 7. Strategy 2: Multi-species Random Forest (Species one-hot)
+# 6. Strategy 2: Multi-species Random Forest (Species one-hot)
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 60)
 print("Strategy 2: Multi-species Random Forest (Species one-hot)")
@@ -190,7 +186,7 @@ print(f"Overall AUC-ROC : {multi_auc:.4f}")
 print(f"Overall Brier   : {multi_brier:.4f}")
 
 # ---------------------------------------------------------------------------
-# 8. Strategy 3: Multi-species Random Forest with interactions
+# 7. Strategy 3: Multi-species Random Forest with interactions
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 60)
 print("Strategy 3: Multi-species Random Forest (Species one-hot + interactions)")
@@ -213,7 +209,7 @@ print(f"Overall AUC-ROC : {int_auc:.4f}")
 print(f"Overall Brier   : {int_brier:.4f}")
 
 # ---------------------------------------------------------------------------
-# 9. Per-species comparison
+# 8. Per-species comparison
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 60)
 print("Per-species log loss comparison")
@@ -247,7 +243,7 @@ comparison_df.to_csv(RESULTS_PATH, index=False)
 print(f"\nSaved per-species comparison to: {RESULTS_PATH}")
 
 # ---------------------------------------------------------------------------
-# 10. Overall summary
+# 9. Overall summary
 # ---------------------------------------------------------------------------
 summary_df = pd.DataFrame([
     {"approach": "single_species", "log_loss": single_log_loss, "auc_roc": single_auc, "brier": single_brier},
@@ -260,9 +256,9 @@ print("=" * 60)
 print(summary_df.to_string(index=False))
 
 # ---------------------------------------------------------------------------
-# 11. Kaggle submissions
+# 10. Kaggle submissions
 # ---------------------------------------------------------------------------
-# 11a. Single-species submission
+# 10a. Single-species submission
 single_sub_probs = []
 for sp in species_list:
     test_sp = test[test[SPECIES_COL] == sp].copy()
@@ -276,7 +272,7 @@ submission_single = submission_single.sort_values("id").reset_index(drop=True)
 submission_single.to_csv(SUBMISSION_SINGLE_PATH, index=False)
 print(f"\nSingle-species submission saved to: {SUBMISSION_SINGLE_PATH}")
 
-# 11b. Multi-species submission
+# 10b. Multi-species submission
 X_te_multi = build_multi_species_X(test, interactions=False)
 multi_sub_probs = np.clip(multi_model.predict_proba(X_te_multi)[:, 1], 1e-6, 1 - 1e-6)
 submission_multi = test[["id"]].copy()
