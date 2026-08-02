@@ -11,12 +11,15 @@ Random Forest models for the DATA5925 reptile species distribution modelling pro
 
 ## Data split
 
-Both scripts use the **team's canonical plot-level split**, loaded directly from
-`MLP/train_plotlevel.csv` and `MLP/test_plotlevel.csv`. Do not re-split the data
-in this folder — all team models are evaluated on the same split so results are
-directly comparable. The split is plot-level, meaning all 8 species observations
-from the same plot stay together in either the training or the test set,
-following Nickson Ning's guidance to avoid spatial leakage.
+Both scripts use the **team's shared row-level split**, loaded directly from
+`Train and Test/train_split.csv` and `Train and Test/test_split.csv`. Do not
+re-split the data in this folder — all team models are evaluated on the same
+split so results are directly comparable.
+
+Note: this is a **row-level stratified split** — rows from the same plot can
+appear in both train and test. This differs from the plot-level split in
+`MLP/train_plotlevel.csv` / `MLP/test_plotlevel.csv`, which keeps all 8 species
+rows of a plot together to avoid spatial leakage.
 
 ## Key design choices
 
@@ -37,7 +40,7 @@ python rf_multi_species.py
 
 The scripts expect the Kaggle data (`test.csv`) in
 `../predicting-small-reptile-species-distributions-in-nsw/` relative to the
-repository root, and the canonical split files in `../MLP/`.
+repository root, and the shared split files in `../Train and Test/`.
 
 ## Output
 

@@ -1,16 +1,18 @@
 """
 Multi-species Random Forest for the DATA5925 reptile SDM project.
 
-This script compares three Random Forest strategies on the team's canonical
-plot-level split (MLP/train_plotlevel.csv and MLP/test_plotlevel.csv):
+This script compares three Random Forest strategies on the team's shared
+row-level split (Train and Test/train_split.csv and Train and Test/test_split.csv):
   1. Single-species: one RF per species (baseline).
   2. Multi-species (one-hot): one RF trained on all species with Species one-hot encoded.
   3. Multi-species (interactions): one-hot Species plus Species x feature interactions.
 
 All approaches are evaluated on the same held-out test set for fair comparison.
 
-The canonical split is maintained by the team in the MLP folder; do not
-re-split the data here, so that all team models are evaluated identically.
+The shared split is maintained by the team in the "Train and Test" folder; do
+not re-split the data here, so that all team models are evaluated identically.
+Note: this is a row-level stratified split — rows from the same plot can appear
+in both train and test.
 
 Run from the repository root with the virtual environment activated:
     cd "Random Forest"
@@ -43,9 +45,9 @@ REPO_ROOT = SCRIPT_DIR.parent                          # repo root
 PROJECT_ROOT = REPO_ROOT.parent                        # DATA5905 root
 DATA_DIR = PROJECT_ROOT / "predicting-small-reptile-species-distributions-in-nsw"
 
-# Canonical team split (maintained in the MLP folder)
-TRAIN_PATH = REPO_ROOT / "MLP" / "train_plotlevel.csv"
-TEST_PATH = REPO_ROOT / "MLP" / "test_plotlevel.csv"
+# Shared team split (maintained in the "Train and Test" folder)
+TRAIN_PATH = REPO_ROOT / "Train and Test" / "train_split.csv"
+TEST_PATH = REPO_ROOT / "Train and Test" / "test_split.csv"
 
 KAGGLE_TEST_PATH = DATA_DIR / "test.csv"
 RESULTS_PATH = SCRIPT_DIR / "rf_single_vs_multi_results.csv"
@@ -53,7 +55,7 @@ SUBMISSION_SINGLE_PATH = SCRIPT_DIR / "submission_rf_single_species.csv"
 SUBMISSION_MULTI_PATH = SCRIPT_DIR / "submission_rf_multi_species.csv"
 
 # ---------------------------------------------------------------------------
-# 2. Load the canonical plot-level split
+# 2. Load the shared row-level split
 # ---------------------------------------------------------------------------
 train_df = pd.read_csv(TRAIN_PATH)
 val_df = pd.read_csv(TEST_PATH)
@@ -65,10 +67,11 @@ print("Kaggle test shape:", test.shape)
 print("Species:", sorted(train_df["Species"].unique()))
 print("Overall presence rate: {:.4f}".format(train_df["pres.abs"].mean()))
 print(
-    "Plot-level split -> train plots: {}, val plots: {} (overlap: {})".format(
+    "Row-level split -> train rows: {} ({} plots), val rows: {} ({} plots)".format(
+        len(train_df),
         train_df["plot"].nunique(),
+        len(val_df),
         val_df["plot"].nunique(),
-        len(set(train_df["plot"]) & set(val_df["plot"])),
     )
 )
 

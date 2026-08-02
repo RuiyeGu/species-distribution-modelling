@@ -2,15 +2,17 @@
 Random Forest baseline for the DATA5925 reptile SDM project.
 
 This script:
-  1. Loads the team's canonical plot-level split
-     (MLP/train_plotlevel.csv and MLP/test_plotlevel.csv).
+  1. Loads the team's shared row-level split
+     (Train and Test/train_split.csv and Train and Test/test_split.csv).
   2. Trains one Random Forest classifier per species (single-species approach).
   3. Handles severe class imbalance with class_weight='balanced'.
   4. Evaluates with log loss, AUC-ROC, Brier score, F1, sensitivity, specificity.
   5. Produces a Kaggle-ready submission file.
 
-The canonical split is maintained by the team in the MLP folder; do not
-re-split the data here, so that all team models are evaluated identically.
+The shared split is maintained by the team in the "Train and Test" folder; do
+not re-split the data here, so that all team models are evaluated identically.
+Note: this is a row-level stratified split — rows from the same plot can appear
+in both train and test.
 
 Run from the repository root with the virtual environment activated:
     cd "Random Forest"
@@ -43,16 +45,16 @@ REPO_ROOT = SCRIPT_DIR.parent                          # repo root
 PROJECT_ROOT = REPO_ROOT.parent                        # DATA5905 root
 DATA_DIR = PROJECT_ROOT / "predicting-small-reptile-species-distributions-in-nsw"
 
-# Canonical team split (maintained in the MLP folder)
-TRAIN_PATH = REPO_ROOT / "MLP" / "train_plotlevel.csv"
-TEST_PATH = REPO_ROOT / "MLP" / "test_plotlevel.csv"
+# Shared team split (maintained in the "Train and Test" folder)
+TRAIN_PATH = REPO_ROOT / "Train and Test" / "train_split.csv"
+TEST_PATH = REPO_ROOT / "Train and Test" / "test_split.csv"
 
 KAGGLE_TEST_PATH = DATA_DIR / "test.csv"
 SUBMISSION_PATH = SCRIPT_DIR / "submission_rf_baseline.csv"
 SUMMARY_PATH = SCRIPT_DIR / "split_summary.csv"
 
 # ---------------------------------------------------------------------------
-# 2. Load the canonical plot-level split
+# 2. Load the shared row-level split
 # ---------------------------------------------------------------------------
 train_df = pd.read_csv(TRAIN_PATH)
 val_df = pd.read_csv(TEST_PATH)
@@ -63,10 +65,11 @@ print("Validation shape:", val_df.shape)
 print("Kaggle test shape:", test.shape)
 print("Species:", sorted(train_df["Species"].unique()))
 print(
-    "Plot-level split -> train plots: {}, val plots: {} (overlap: {})".format(
+    "Row-level split -> train rows: {} ({} plots), val rows: {} ({} plots)".format(
+        len(train_df),
         train_df["plot"].nunique(),
+        len(val_df),
         val_df["plot"].nunique(),
-        len(set(train_df["plot"]) & set(val_df["plot"])),
     )
 )
 
@@ -193,7 +196,7 @@ overall_auc = roc_auc_score(y_true_all, y_prob_all)
 overall_brier = brier_score_loss(y_true_all, y_prob_all)
 
 print("\n" + "=" * 60)
-print("Overall validation performance (canonical plot-level split)")
+print("Overall validation performance (shared row-level split)")
 print("=" * 60)
 print(f"Log loss      : {overall_log_loss:.5f}")
 print(f"AUC-ROC       : {overall_auc:.4f}")
