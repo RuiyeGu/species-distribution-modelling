@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
     repo_root = args.repo_root.resolve()
-    output_dir = args.output_dir or repo_root / "GAM" / "Output" / "task3"
+    output_dir = args.output_dir or Path(__file__).resolve().parent
 
     for split_type in ["spatial", "random"]:
         _, metrics = run_experiment(
