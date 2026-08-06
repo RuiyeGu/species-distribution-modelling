@@ -11,7 +11,7 @@ from protocol import run_experiment
 
 # After copying task3_protocol into the repository root, this is its parent.
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = REPO_ROOT / "GAM" / "Output" / "task3"
+OUTPUT_DIR = REPO_ROOT / "GAM" / "Output" 
 
 # GAM-specific component. Shared preprocessing and metrics remain in protocol.py.
 gam = Pipeline([
