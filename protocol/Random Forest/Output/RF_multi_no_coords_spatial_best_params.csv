@@ -1,0 +1,2 @@
+model,split_type,use_coords,classifier__class_weight,classifier__max_depth,classifier__max_features,classifier__min_samples_leaf,classifier__n_estimators,mean_cv_log_loss,std_cv_log_loss
+RF_multi_no_coords,spatial,False,balanced,,sqrt,1,500,0.18431683057790887,0.008686663113982335
