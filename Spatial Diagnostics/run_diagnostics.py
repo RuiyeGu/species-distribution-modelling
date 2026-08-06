@@ -22,8 +22,8 @@ def main():
 
     prediction_pairs = {
         "with_coords": [
-            root / "GAM_spatial_predictions.csv",
-            root / "GAM_random_predictions.csv",
+            root / "GAM_with_coords_spatial_predictions.csv",
+            root / "GAM_with_coords_random_predictions.csv",
         ],
         "no_coords": [
             root / "GAM_no_coords_spatial_predictions.csv",
