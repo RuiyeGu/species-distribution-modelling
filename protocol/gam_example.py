@@ -1,4 +1,4 @@
-"""Example showing how GAM plugs into the shared Task 3 protocol."""
+"""Example showing how GAM plugs into the protocol."""
 
 import argparse
 from pathlib import Path
