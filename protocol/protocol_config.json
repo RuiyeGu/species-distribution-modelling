@@ -19,6 +19,18 @@
     "tempann",
     "topo"
   ],
+  "coordinate_predictors": [
+    "easting",
+    "northing"
+  ],
+  "environmental_predictors": [
+    "disturb",
+    "rainann",
+    "soildepth",
+    "soilfert",
+    "tempann",
+    "topo"
+  ],
   "target": "pres.abs",
   "species": "Species",
   "group": "plot",
