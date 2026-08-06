@@ -1,2 +1,0 @@
-model,split_type,use_coords,classifier__colsample_bytree,classifier__learning_rate,classifier__max_depth,classifier__n_estimators,classifier__subsample,mean_cv_log_loss,std_cv_log_loss
-XGBoost_multi_no_coords,spatial,False,0.8,0.03,5,300,0.8,0.16211691183241478,0.013675497827497711
