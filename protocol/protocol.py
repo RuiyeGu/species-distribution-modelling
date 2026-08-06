@@ -1,4 +1,4 @@
-"""Reusable Task 3 protocol for all model families."""
+"""Reusable protocol for all model families."""
 
 import json
 from pathlib import Path
