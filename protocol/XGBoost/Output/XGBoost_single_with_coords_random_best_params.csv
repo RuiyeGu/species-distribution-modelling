@@ -1,0 +1,9 @@
+model,split_type,use_coords,species,model__colsample_bytree,model__learning_rate,model__max_depth,model__n_estimators,model__subsample,mean_cv_log_loss,std_cv_log_loss
+XGBoost_single_with_coords,random,True,Cacophis kreftii,1.0,0.03,3,100,0.8,0.09264430866776785,0.018050954652223353
+XGBoost_single_with_coords,random,True,Calyptotis scutirostrum,0.8,0.03,3,300,0.8,0.1298809269749864,0.017104936611072926
+XGBoost_single_with_coords,random,True,Coeranoscincus reticulatus,0.8,0.03,5,100,0.8,0.2838739815693212,0.03316954833956524
+XGBoost_single_with_coords,random,True,Egernia mcpheei,0.8,0.03,3,100,0.8,0.08091283820964637,0.02295592555756333
+XGBoost_single_with_coords,random,True,Eulamprus murrayi,0.8,0.1,3,300,0.8,0.027174828437854636,0.027177430831124526
+XGBoost_single_with_coords,random,True,Ophioscincus truncatus,0.8,0.03,3,100,0.8,0.3628030402615062,0.03375332747750313
+XGBoost_single_with_coords,random,True,Pseudechis porphyricaus,1.0,0.03,3,100,1.0,0.07313600154380832,0.03328786742768769
+XGBoost_single_with_coords,random,True,Saltuarius swaini,0.8,0.03,3,100,1.0,0.07527279126752055,0.024314501309831933
