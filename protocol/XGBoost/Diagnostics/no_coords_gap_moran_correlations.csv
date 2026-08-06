@@ -1,0 +1,3 @@
+coordinate_setting,model,n_species,spearman_rho,permutation_p,permutations
+no_coords,XGBoost_multi_no_coords,6,0.14285714285714288,0.824,999
+no_coords,XGBoost_single_no_coords,6,-0.2,0.702,999
