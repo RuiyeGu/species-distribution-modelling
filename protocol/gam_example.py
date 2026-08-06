@@ -1,5 +1,3 @@
-"""tuned GAM comparisons with easting/northing excluded."""
-
 import argparse
 from pathlib import Path
 
