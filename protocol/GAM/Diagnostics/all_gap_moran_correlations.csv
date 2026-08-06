@@ -1,0 +1,7 @@
+coordinate_setting,model,n_species,spearman_rho,permutation_p,permutations
+with_coords,GAM_multi_interactions_with_coords,6,0.7714285714285715,0.12,999
+with_coords,GAM_multi_with_coords,6,0.3714285714285715,0.489,999
+with_coords,GAM_single_with_coords,6,0.2571428571428572,0.648,999
+no_coords,GAM_multi_interactions_no_coords,6,-0.08571428571428573,0.905,999
+no_coords,GAM_multi_no_coords,6,-0.5428571428571429,0.301,999
+no_coords,GAM_single_no_coords,6,0.2571428571428572,0.643,999
