@@ -1,0 +1,4 @@
+coordinate_setting,model,n_species,spearman_rho,permutation_p,permutations
+no_coords,RF_multi_interactions_no_coords,6,-0.3714285714285715,0.515,999
+no_coords,RF_multi_no_coords,6,-0.3714285714285715,0.488,999
+no_coords,RF_single_no_coords,6,-0.2,0.719,999
