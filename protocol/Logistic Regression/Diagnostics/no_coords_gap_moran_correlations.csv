@@ -1,0 +1,4 @@
+coordinate_setting,model,n_species,spearman_rho,permutation_p,permutations
+no_coords,Logistic_multi_interactions_no_coords,6,0.48571428571428577,0.36,999
+no_coords,Logistic_multi_no_coords,6,-0.7142857142857143,0.138,999
+no_coords,Logistic_single_no_coords,6,0.2571428571428572,0.652,999

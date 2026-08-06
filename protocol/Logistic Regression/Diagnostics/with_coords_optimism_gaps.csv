@@ -1,0 +1,25 @@
+coordinate_setting,model,species,random,spatial,optimism_gap_auc,morans_i
+with_coords,Logistic_multi_interactions_with_coords,Cacophis kreftii,0.844758064516129,0.8740157480314961,-0.02925768351536706,0.218424879757908
+with_coords,Logistic_multi_interactions_with_coords,Calyptotis scutirostrum,0.9291294642857143,0.7565217391304347,0.17260772515527956,0.17283638703049758
+with_coords,Logistic_multi_interactions_with_coords,Coeranoscincus reticulatus,0.7912037037037037,0.8017045454545455,-0.01050084175084176,0.3328331092396059
+with_coords,Logistic_multi_interactions_with_coords,Egernia mcpheei,0.8346666666666667,0.6215846994535519,0.2130819672131148,0.035216081645157465
+with_coords,Logistic_multi_interactions_with_coords,Eulamprus murrayi,0.007874015748031496,,,0.6684836879494541
+with_coords,Logistic_multi_interactions_with_coords,Ophioscincus truncatus,0.7643288084464555,0.8702341137123746,-0.10590530526591913,0.11549077360331005
+with_coords,Logistic_multi_interactions_with_coords,Pseudechis porphyricaus,0.33066666666666666,0.7023809523809523,-0.37171428571428566,0.004685408231398194
+with_coords,Logistic_multi_interactions_with_coords,Saltuarius swaini,0.8346456692913385,,,0.6415299602672243
+with_coords,Logistic_multi_with_coords,Cacophis kreftii,0.8608870967741935,1.0,-0.1391129032258065,0.03478569966811458
+with_coords,Logistic_multi_with_coords,Calyptotis scutirostrum,0.8950892857142857,0.7304347826086957,0.16465450310559004,0.182390449150292
+with_coords,Logistic_multi_with_coords,Coeranoscincus reticulatus,0.6504629629629629,0.6389204545454545,0.011542508417508368,0.4361186414318619
+with_coords,Logistic_multi_with_coords,Egernia mcpheei,0.928,0.73224043715847,0.19575956284153007,-0.005868087221352503
+with_coords,Logistic_multi_with_coords,Eulamprus murrayi,0.07874015748031496,,,0.6603368465136068
+with_coords,Logistic_multi_with_coords,Ophioscincus truncatus,0.7285067873303167,0.7785953177257525,-0.050088530395435815,0.27943861974784034
+with_coords,Logistic_multi_with_coords,Pseudechis porphyricaus,0.15466666666666667,0.3253968253968254,-0.17073015873015873,0.0002188878575131775
+with_coords,Logistic_multi_with_coords,Saltuarius swaini,0.08661417322834646,,,0.6642282708405107
+with_coords,Logistic_single_with_coords,Cacophis kreftii,0.8669354838709677,1.0,-0.13306451612903225,0.12385883615569984
+with_coords,Logistic_single_with_coords,Calyptotis scutirostrum,0.9235491071428571,0.7545150501672241,0.169034056975633,0.17284711419711654
+with_coords,Logistic_single_with_coords,Coeranoscincus reticulatus,0.7944444444444444,0.7869318181818182,0.007512626262626165,0.3775073269725477
+with_coords,Logistic_single_with_coords,Egernia mcpheei,0.9093333333333333,0.6188524590163934,0.2904808743169399,0.003419491808345715
+with_coords,Logistic_single_with_coords,Eulamprus murrayi,0.023622047244094488,,,0.7069488677485257
+with_coords,Logistic_single_with_coords,Ophioscincus truncatus,0.7692307692307693,0.882943143812709,-0.11371237458193972,0.12152637845461706
+with_coords,Logistic_single_with_coords,Pseudechis porphyricaus,0.3893333333333333,0.7301587301587301,-0.3408253968253968,-0.0004355829931609265
+with_coords,Logistic_single_with_coords,Saltuarius swaini,0.8582677165354331,,,0.713184029954293
