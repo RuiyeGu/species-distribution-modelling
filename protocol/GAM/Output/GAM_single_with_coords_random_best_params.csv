@@ -1,0 +1,9 @@
+model,split_type,use_coords,species,model__classifier__C,model__classifier__class_weight,model__splines__n_knots,mean_cv_log_loss,std_cv_log_loss
+GAM_single_with_coords,random,True,Cacophis kreftii,0.5,,6,0.10779060486223102,0.01563090939563352
+GAM_single_with_coords,random,True,Calyptotis scutirostrum,0.5,,8,0.15010608195025785,0.013238722503454588
+GAM_single_with_coords,random,True,Coeranoscincus reticulatus,0.5,,8,0.3054333236380676,0.03183273222716295
+GAM_single_with_coords,random,True,Egernia mcpheei,0.5,,8,0.07901141100825926,0.014731092306734115
+GAM_single_with_coords,random,True,Eulamprus murrayi,0.1,,4,0.02726738470388307,0.027418322756720133
+GAM_single_with_coords,random,True,Ophioscincus truncatus,0.5,,8,0.386245055702679,0.020243064863919056
+GAM_single_with_coords,random,True,Pseudechis porphyricaus,0.5,,8,0.08837315762447193,0.0244445782649872
+GAM_single_with_coords,random,True,Saltuarius swaini,0.5,,4,0.07247293461465876,0.01908734035252761

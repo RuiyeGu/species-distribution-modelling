@@ -1,0 +1,9 @@
+model,split_type,use_coords,species,n,positives,log_loss,auc,average_precision,brier,f1,sensitivity,specificity
+GAM_multi_interactions_no_coords,spatial,False,Cacophis kreftii,128,1,0.05956906218978272,0.9921259842519685,0.5,0.008835699666127335,0.0,0.0,1.0
+GAM_multi_interactions_no_coords,spatial,False,Calyptotis scutirostrum,128,13,0.27441753224379684,0.8046822742474916,0.40914680301777073,0.07933856869897901,0.0,0.0,1.0
+GAM_multi_interactions_no_coords,spatial,False,Coeranoscincus reticulatus,128,40,0.5736898670314179,0.8019886363636364,0.6145176155154022,0.19776612521987996,0.04878048780487805,0.025,1.0
+GAM_multi_interactions_no_coords,spatial,False,Egernia mcpheei,128,6,0.1749342232034318,0.8142076502732241,0.2070523039393839,0.0435367206281247,0.0,0.0,1.0
+GAM_multi_interactions_no_coords,spatial,False,Eulamprus murrayi,128,0,0.010471038690077084,,,0.00016492535882032817,0.0,,1.0
+GAM_multi_interactions_no_coords,spatial,False,Ophioscincus truncatus,128,13,0.3074111948529217,0.7505016722408027,0.23735279872819898,0.09133579928531732,0.0,0.0,0.991304347826087
+GAM_multi_interactions_no_coords,spatial,False,Pseudechis porphyricaus,128,2,0.07914322519907313,0.6865079365079365,0.112987012987013,0.015338947610820781,0.0,0.0,1.0
+GAM_multi_interactions_no_coords,spatial,False,Saltuarius swaini,128,0,0.02056681557241306,,,0.0005142146160843057,0.0,,1.0

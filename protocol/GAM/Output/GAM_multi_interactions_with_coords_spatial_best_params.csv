@@ -1,0 +1,2 @@
+model,split_type,use_coords,classifier__C,classifier__class_weight,features__n_knots,mean_cv_log_loss,std_cv_log_loss
+GAM_multi_interactions_with_coords,spatial,True,0.5,,8,0.15355937350019316,0.01288456209438142
