@@ -31,7 +31,7 @@ def load_config():
 
 
 def load_split(repo_root, split_type):
-    """Load and validate one of the fixed Task 1/2 plot-level splits."""
+    """Load and validate one of the fixed plot-level splits."""
     config = load_config()
     if split_type not in config["splits"]:
         raise ValueError(f"Unknown split_type: {split_type}")
@@ -56,10 +56,18 @@ def load_split(repo_root, split_type):
     return train, test
 
 
-def make_preprocessor():
+def get_predictors(use_coords=True):
+    """Return model inputs while retaining coordinates elsewhere for diagnostics."""
+    config = load_config()
+    if use_coords:
+        return config["predictors"]
+    return config["environmental_predictors"]
+
+
+def make_preprocessor(use_coords=True):
     """Create the common preprocessing fitted only on each training set."""
     config = load_config()
-    predictors = config["predictors"]
+    predictors = get_predictors(use_coords)
     numeric = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
@@ -71,7 +79,7 @@ def make_preprocessor():
 
 
 def evaluate(y_true, probability):
-    """Calculate the common Task 3 evaluation metrics."""
+    """Calculate the common evaluation metrics."""
     config = load_config()
     y_true = np.asarray(y_true, dtype=int)
     probability = np.clip(np.asarray(probability, dtype=float), 1e-6, 1 - 1e-6)
@@ -93,10 +101,12 @@ def evaluate(y_true, probability):
     }
 
 
-def run_experiment(model_name, estimator, split_type, repo_root, output_dir):
+def run_experiment(
+    model_name, estimator, split_type, repo_root, output_dir, use_coords=True
+):
     """Fit one cloned estimator per species and save standard outputs."""
     config = load_config()
-    predictors = config["predictors"]
+    predictors = get_predictors(use_coords)
     target = config["target"]
     species_col = config["species"]
     group = config["group"]
@@ -109,7 +119,7 @@ def run_experiment(model_name, estimator, split_type, repo_root, output_dir):
         train_sp = train[train[species_col] == species].copy()
         test_sp = test[test[species_col] == species].copy()
         pipeline = Pipeline([
-            ("preprocess", make_preprocessor()),
+            ("preprocess", make_preprocessor(use_coords)),
             ("model", clone(estimator)),
         ])
         pipeline.fit(train_sp[predictors], train_sp[target].astype(int))
@@ -120,6 +130,7 @@ def run_experiment(model_name, estimator, split_type, repo_root, output_dir):
         metric_rows.append({
             "model": model_name,
             "split_type": split_type,
+            "use_coords": use_coords,
             "species": species,
             **evaluate(test_sp[target], probability),
         })
@@ -129,6 +140,7 @@ def run_experiment(model_name, estimator, split_type, repo_root, output_dir):
             "species": species,
             "model": model_name,
             "split_type": split_type,
+            "use_coords": use_coords,
             "y_true": test_sp[target].astype(int).to_numpy(),
             "y_prob": probability,
             "easting": test_sp["easting"].to_numpy(),
@@ -153,6 +165,7 @@ def run_tuned_experiment(
     output_dir,
     n_splits=None,
     selection_metric=None,
+    use_coords=True,
 ):
     """Tune each species on training plots only, then test exactly once.
 
@@ -177,7 +190,7 @@ def run_tuned_experiment(
     if not tuning["refit_on_full_training_set"] or not tuning["evaluate_test_once"]:
         raise ValueError("Task 5 requires full-train refit and one final test evaluation")
 
-    predictors = config["predictors"]
+    predictors = get_predictors(use_coords)
     target = config["target"]
     species_col = config["species"]
     group_col = config["group"]
@@ -210,7 +223,7 @@ def run_tuned_experiment(
                 splitter.split(X_train, y_train, groups), start=1
             ):
                 pipeline = Pipeline([
-                    ("preprocess", make_preprocessor()),
+                    ("preprocess", make_preprocessor(use_coords)),
                     ("model", clone(estimator)),
                 ])
                 pipeline.set_params(**params)
@@ -225,6 +238,7 @@ def run_tuned_experiment(
                 cv_rows.append({
                     "model": model_name,
                     "split_type": split_type,
+                    "use_coords": use_coords,
                     "species": species,
                     "candidate": candidate_number,
                     "fold": fold,
@@ -243,6 +257,7 @@ def run_tuned_experiment(
         best_param_rows.append({
             "model": model_name,
             "split_type": split_type,
+            "use_coords": use_coords,
             "species": species,
             **best_params,
             "mean_cv_log_loss": best["mean_log_loss"],
@@ -250,7 +265,7 @@ def run_tuned_experiment(
         })
 
         final_pipeline = Pipeline([
-            ("preprocess", make_preprocessor()),
+            ("preprocess", make_preprocessor(use_coords)),
             ("model", clone(estimator)),
         ])
         final_pipeline.set_params(**best_params)
@@ -264,6 +279,7 @@ def run_tuned_experiment(
         metric_rows.append({
             "model": model_name,
             "split_type": split_type,
+            "use_coords": use_coords,
             "species": species,
             **evaluate(test_sp[target], probability),
         })
@@ -273,6 +289,7 @@ def run_tuned_experiment(
             "species": species,
             "model": model_name,
             "split_type": split_type,
+            "use_coords": use_coords,
             "y_true": test_sp[target].astype(int).to_numpy(),
             "y_prob": probability,
             "easting": test_sp["easting"].to_numpy(),
