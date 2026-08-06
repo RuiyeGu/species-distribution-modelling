@@ -1,0 +1,9 @@
+model,split_type,use_coords,species,n,positives,log_loss,auc,average_precision,brier,f1,sensitivity,specificity
+Logistic_multi_with_coords,spatial,True,Cacophis kreftii,128,1,0.07388887953094278,1.0,1.0,0.009726824930623077,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Calyptotis scutirostrum,128,13,0.3008451359105231,0.7304347826086957,0.3788390254420755,0.08586282711256138,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Coeranoscincus reticulatus,128,40,0.6359539230208341,0.6389204545454545,0.41690595325209956,0.22186904953927167,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Egernia mcpheei,128,6,0.1887560898845967,0.73224043715847,0.24022951574003554,0.044641151799990876,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Eulamprus murrayi,128,0,0.012503329234617156,,,0.00018778807794070552,0.0,,1.0
+Logistic_multi_with_coords,spatial,True,Ophioscincus truncatus,128,13,0.39479164753150575,0.7785953177257524,0.23637747749818228,0.11541091328212275,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Pseudechis porphyricaus,128,2,0.09229965934153064,0.3253968253968254,0.016870748299319727,0.01630909148369439,0.0,0.0,1.0
+Logistic_multi_with_coords,spatial,True,Saltuarius swaini,128,0,0.026608707779360734,,,0.0008319712451119293,0.0,,1.0

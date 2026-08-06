@@ -1,0 +1,2 @@
+model,split_type,use_coords,classifier__C,classifier__class_weight,mean_cv_log_loss,std_cv_log_loss
+Logistic_multi_no_coords,spatial,False,1.0,,0.194386157922451,0.009417631422228895
