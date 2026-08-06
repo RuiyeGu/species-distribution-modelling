@@ -223,14 +223,17 @@ def main():
         all_metrics.append(single_metrics)
 
         approach = f"XGBoost_multi_{coordinate_label}"
-
-        predictions, metrics, _, _ = tune_multi(
-            train,
-            test,
-            split_type,
-            approach,
-            output_dir,
-        )
+        for approach, interactions in [
+            (f"XGBoost_multi_{coordinate_label}", False),
+            (f"XGBoost_multi_interactions_{coordinate_label}", True),
+        ]:
+            predictions, metrics, _, _ = tune_multi(
+                train,
+                test,
+                split_type,
+                approach,
+                output_dir,
+            )
 
         all_predictions.append(predictions)
         all_metrics.append(metrics)
