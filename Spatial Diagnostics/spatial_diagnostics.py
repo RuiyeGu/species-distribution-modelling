@@ -1,4 +1,4 @@
-"""Task 4: reusable spatial diagnostics for any model's predictions."""
+"""reusable spatial diagnostics for any model's predictions."""
 
 import argparse
 from pathlib import Path
@@ -27,7 +27,10 @@ def load_predictions(paths):
 
 
 def nearest_training_distances(repo_root, split_type):
-    split_dir = Path(repo_root) / "Split data"
+    repo_root = Path(repo_root)
+    split_dir = repo_root
+    if not (split_dir / f"{split_type}_train.csv").exists():
+        split_dir = repo_root / "Split data"
     train = pd.read_csv(split_dir / f"{split_type}_train.csv")
     test = pd.read_csv(split_dir / f"{split_type}_test.csv")
     train_plots = train.drop_duplicates("plot")[["plot", "easting", "northing"]]
@@ -179,10 +182,19 @@ def compute_gap_tables(predictions, moran_table, permutations, seed):
 
 
 def main():
+    script_dir = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repo-root", type=Path, required=True)
-    parser.add_argument("--predictions", type=Path, nargs="+", required=True)
-    parser.add_argument("--output-dir", type=Path, default=Path("task4_results"))
+    parser.add_argument("--repo-root", type=Path, default=script_dir)
+    parser.add_argument(
+        "--predictions",
+        type=Path,
+        nargs="+",
+        default=[
+            script_dir / "GAM_spatial_predictions.csv",
+            script_dir / "GAM_random_predictions.csv",
+        ],
+    )
+    parser.add_argument("--output-dir", type=Path, default=script_dir)
     parser.add_argument("--k", type=int, default=8)
     parser.add_argument("--permutations", type=int, default=999)
     parser.add_argument("--seed", type=int, default=42)
