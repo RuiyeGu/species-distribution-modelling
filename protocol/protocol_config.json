@@ -1,0 +1,41 @@
+{
+  "splits": {
+    "spatial": {
+      "train": "Split data/spatial_train.csv",
+      "test": "Split data/spatial_test.csv"
+    },
+    "random": {
+      "train": "Split data/random_train.csv",
+      "test": "Split data/random_test.csv"
+    }
+  },
+  "predictors": [
+    "easting",
+    "northing",
+    "disturb",
+    "rainann",
+    "soildepth",
+    "soilfert",
+    "tempann",
+    "topo"
+  ],
+  "target": "pres.abs",
+  "species": "Species",
+  "group": "plot",
+  "id": "id",
+  "preprocessing": {
+    "missing_values": "median",
+    "scaling": "standard"
+  },
+  "metrics": [
+    "log_loss",
+    "auc",
+    "average_precision",
+    "brier",
+    "f1",
+    "sensitivity",
+    "specificity"
+  ],
+  "threshold": 0.5,
+  "random_seed": 42
+}
