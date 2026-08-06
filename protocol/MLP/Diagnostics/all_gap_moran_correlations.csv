@@ -1,0 +1,5 @@
+model,n_species,spearman_rho,permutation_p,permutations
+MLP_multi_no_coords,6,0.3714285714285715,0.483,999
+MLP_multi_with_coords,6,0.3142857142857143,0.542,999
+MLP_single_no_coords,6,-0.08571428571428573,0.921,999
+MLP_single_with_coords,6,0.48571428571428577,0.347,999
