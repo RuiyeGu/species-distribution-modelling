@@ -1,225 +1,310 @@
-"""reusable spatial diagnostics for any model's predictions."""
+"""Reusable protocol for all model families."""
 
-import argparse
+import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import (
+    average_precision_score,
+    brier_score_loss,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    roc_auc_score,
+)
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import ParameterGrid, StratifiedGroupKFold
+from sklearn.preprocessing import StandardScaler
 
 
-REQUIRED_PREDICTION_COLUMNS = {
-    "plot", "species", "model", "split_type", "y_true", "y_prob",
-    "easting", "northing",
-}
+PROTOCOL_DIR = Path(__file__).resolve().parent
+CONFIG_PATH = PROTOCOL_DIR / "protocol_config.json"
 
 
-def load_predictions(paths):
-    tables = [pd.read_csv(path) for path in paths]
-    predictions = pd.concat(tables, ignore_index=True)
-    missing = REQUIRED_PREDICTION_COLUMNS - set(predictions.columns)
-    if missing:
-        raise ValueError(f"Prediction files are missing columns: {sorted(missing)}")
-    if not set(predictions["split_type"]).issubset({"spatial", "random"}):
-        raise ValueError("split_type must contain only 'spatial' and 'random'")
-    if predictions["y_prob"].isna().any() or not predictions["y_prob"].between(0, 1).all():
-        raise ValueError("y_prob must contain finite probabilities in [0, 1]")
-    return predictions
+def load_config():
+    with CONFIG_PATH.open(encoding="utf-8") as handle:
+        return json.load(handle)
 
 
-def nearest_training_distances(repo_root, split_type):
+def load_split(repo_root, split_type):
+    """Load and validate one of the fixed plot-level splits."""
+    config = load_config()
+    if split_type not in config["splits"]:
+        raise ValueError(f"Unknown split_type: {split_type}")
+
     repo_root = Path(repo_root)
-    split_dir = repo_root
-    if not (split_dir / f"{split_type}_train.csv").exists():
-        split_dir = repo_root / "Split data"
-    train = pd.read_csv(split_dir / f"{split_type}_train.csv")
-    test = pd.read_csv(split_dir / f"{split_type}_test.csv")
-    train_plots = train.drop_duplicates("plot")[["plot", "easting", "northing"]]
-    test_plots = test.drop_duplicates("plot")[["plot", "easting", "northing"]]
+    paths = config["splits"][split_type]
+    train = pd.read_csv(repo_root / paths["train"])
+    test = pd.read_csv(repo_root / paths["test"])
 
-    train_xy = train_plots[["easting", "northing"]].to_numpy(float)
-    rows = []
-    for point in test_plots.itertuples(index=False):
-        delta = train_xy - np.array([point.easting, point.northing])
-        distance = np.sqrt(np.sum(delta * delta, axis=1))
-        nearest_index = int(np.argmin(distance))
-        rows.append({
-            "split_type": split_type,
-            "test_plot": point.plot,
-            "nearest_train_plot": train_plots.iloc[nearest_index]["plot"],
-            "distance_coordinate_units": float(distance[nearest_index]),
-            "distance_km": float(distance[nearest_index] / 1000.0),
-        })
-    return pd.DataFrame(rows)
+    required = set(config["predictors"] + [
+        config["target"], config["species"], config["group"], config["id"]
+    ])
+    for label, frame in [("train", train), ("test", test)]:
+        missing = required - set(frame.columns)
+        if missing:
+            raise ValueError(f"{label} data is missing columns: {sorted(missing)}")
+
+    group = config["group"]
+    overlap = set(train[group]) & set(test[group])
+    if overlap:
+        raise ValueError(f"Plot leakage detected: {len(overlap)} shared plots")
+    return train, test
 
 
-def knn_weights(coordinates, k):
-    n = len(coordinates)
-    if n < 3:
-        raise ValueError("Moran's I requires at least three test plots")
-    k = min(k, n - 1)
-    delta = coordinates[:, None, :] - coordinates[None, :, :]
-    distances = np.sqrt(np.sum(delta * delta, axis=2))
-    np.fill_diagonal(distances, np.inf)
-    neighbours = np.argpartition(distances, kth=k - 1, axis=1)[:, :k]
-    weights = np.zeros((n, n), dtype=float)
-    weights[np.arange(n)[:, None], neighbours] = 1.0
-    weights /= weights.sum(axis=1, keepdims=True)
-    return weights
+def get_predictors(use_coords=True):
+    """Return model inputs while retaining coordinates elsewhere for diagnostics."""
+    config = load_config()
+    if use_coords:
+        return config["predictors"]
+    return config["environmental_predictors"]
 
 
-def morans_i(values, weights):
-    values = np.asarray(values, dtype=float)
-    centred = values - values.mean()
-    denominator = float(centred @ centred)
-    if denominator == 0:
-        return np.nan
-    return float(len(values) / weights.sum() * ((weights * np.outer(centred, centred)).sum() / denominator))
-
-
-def moran_permutation_test(values, coordinates, k, permutations, rng):
-    weights = knn_weights(np.asarray(coordinates, dtype=float), k)
-    observed = morans_i(values, weights)
-    if np.isnan(observed):
-        return observed, np.nan
-    permuted = np.array([morans_i(rng.permutation(values), weights) for _ in range(permutations)])
-    p_value = (1 + np.sum(np.abs(permuted) >= abs(observed))) / (permutations + 1)
-    return observed, float(p_value)
-
-
-def compute_moran_table(predictions, k, permutations, seed):
-    rng = np.random.default_rng(seed)
-    rows = []
-    keys = ["model", "species", "split_type"]
-    for key, group in predictions.groupby(keys, sort=True):
-        if group["plot"].duplicated().any():
-            raise ValueError(f"Duplicate plot predictions found for {key}")
-        residual = group["y_true"].to_numpy(float) - group["y_prob"].to_numpy(float)
-        coordinates = group[["easting", "northing"]].to_numpy(float)
-        statistic, p_value = moran_permutation_test(
-            residual, coordinates, k, permutations, rng
-        )
-        rows.append({
-            "model": key[0],
-            "species": key[1],
-            "split_type": key[2],
-            "n_test_plots": len(group),
-            "k_neighbours": min(k, len(group) - 1),
-            "permutations": permutations,
-            "morans_i": statistic,
-            "permutation_p": p_value,
-        })
-    return pd.DataFrame(rows)
-
-
-def binary_auc(y_true, probability):
-    y_true = np.asarray(y_true, dtype=int)
-    probability = np.asarray(probability, dtype=float)
-    positive = probability[y_true == 1]
-    negative = probability[y_true == 0]
-    if len(positive) == 0 or len(negative) == 0:
-        return np.nan
-    comparisons = positive[:, None] - negative[None, :]
-    return float((np.sum(comparisons > 0) + 0.5 * np.sum(comparisons == 0)) / comparisons.size)
-
-
-def rank_values(values):
-    return pd.Series(values).rank(method="average").to_numpy(float)
-
-
-def spearman(values_a, values_b):
-    a = rank_values(values_a)
-    b = rank_values(values_b)
-    if np.std(a) == 0 or np.std(b) == 0:
-        return np.nan
-    return float(np.corrcoef(a, b)[0, 1])
-
-
-def spearman_permutation_test(values_a, values_b, permutations, rng):
-    observed = spearman(values_a, values_b)
-    if np.isnan(observed):
-        return observed, np.nan
-    permuted = np.array([spearman(values_a, rng.permutation(values_b)) for _ in range(permutations)])
-    p_value = (1 + np.sum(np.abs(permuted) >= abs(observed))) / (permutations + 1)
-    return observed, float(p_value)
-
-
-def compute_gap_tables(predictions, moran_table, permutations, seed):
-    score_rows = []
-    for key, group in predictions.groupby(["model", "species", "split_type"], sort=True):
-        score_rows.append({
-            "model": key[0],
-            "species": key[1],
-            "split_type": key[2],
-            "auc": binary_auc(group["y_true"], group["y_prob"]),
-        })
-    scores = pd.DataFrame(score_rows)
-    wide = scores.pivot(index=["model", "species"], columns="split_type", values="auc").reset_index()
-    if not {"random", "spatial"}.issubset(wide.columns):
-        raise ValueError("Both random and spatial predictions are required for optimism gaps")
-    wide["optimism_gap_auc"] = wide["random"] - wide["spatial"]
-    spatial_moran = moran_table[moran_table["split_type"] == "spatial"][[
-        "model", "species", "morans_i"
-    ]]
-    gaps = wide.merge(spatial_moran, on=["model", "species"], how="left")
-
-    rng = np.random.default_rng(seed)
-    correlations = []
-    for model, group in gaps.dropna(subset=["optimism_gap_auc", "morans_i"]).groupby("model"):
-        rho, p_value = spearman_permutation_test(
-            group["optimism_gap_auc"].to_numpy(),
-            group["morans_i"].to_numpy(),
-            permutations,
-            rng,
-        )
-        correlations.append({
-            "model": model,
-            "n_species": len(group),
-            "spearman_rho": rho,
-            "permutation_p": p_value,
-            "permutations": permutations,
-        })
-    return gaps, pd.DataFrame(correlations)
-
-
-def main():
-    script_dir = Path(__file__).resolve().parent
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--repo-root", type=Path, default=script_dir)
-    parser.add_argument(
-        "--predictions",
-        type=Path,
-        nargs="+",
-        default=[
-            script_dir / "GAM_spatial_predictions.csv",
-            script_dir / "GAM_random_predictions.csv",
-        ],
+def make_preprocessor(use_coords=True):
+    """Create the common preprocessing fitted only on each training set."""
+    config = load_config()
+    predictors = get_predictors(use_coords)
+    numeric = Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("scaler", StandardScaler()),
+    ])
+    return ColumnTransformer(
+        [("numeric", numeric, predictors)],
+        remainder="drop",
     )
-    parser.add_argument("--output-dir", type=Path, default=script_dir)
-    parser.add_argument("--k", type=int, default=8)
-    parser.add_argument("--permutations", type=int, default=999)
-    parser.add_argument("--seed", type=int, default=42)
-    args = parser.parse_args()
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-
-    predictions = load_predictions(args.predictions)
-    distances = pd.concat([
-        nearest_training_distances(args.repo_root, "spatial"),
-        nearest_training_distances(args.repo_root, "random"),
-    ], ignore_index=True)
-    distance_summary = distances.groupby("split_type")["distance_km"].agg(
-        n_test_plots="count", median_km="median", mean_km="mean", min_km="min", max_km="max"
-    ).reset_index()
-    moran = compute_moran_table(predictions, args.k, args.permutations, args.seed)
-    gaps, correlations = compute_gap_tables(predictions, moran, args.permutations, args.seed)
-
-    distances.to_csv(args.output_dir / "nearest_training_distances.csv", index=False)
-    distance_summary.to_csv(args.output_dir / "distance_summary.csv", index=False)
-    moran.to_csv(args.output_dir / "morans_i.csv", index=False)
-    gaps.to_csv(args.output_dir / "optimism_gaps.csv", index=False)
-    correlations.to_csv(args.output_dir / "gap_moran_correlations.csv", index=False)
-    print(distance_summary.to_string(index=False))
-    print(f"Saved Task 4 results to {args.output_dir}")
 
 
-if __name__ == "__main__":
-    main()
+def evaluate(y_true, probability):
+    """Calculate the common evaluation metrics."""
+    config = load_config()
+    y_true = np.asarray(y_true, dtype=int)
+    probability = np.clip(np.asarray(probability, dtype=float), 1e-6, 1 - 1e-6)
+    prediction = (probability >= config["threshold"]).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, prediction, labels=[0, 1]).ravel()
+    two_classes = np.unique(y_true).size == 2
+
+    return {
+        "n": len(y_true),
+        "positives": int(y_true.sum()),
+        "log_loss": log_loss(y_true, probability, labels=[0, 1]),
+        "auc": roc_auc_score(y_true, probability) if two_classes else np.nan,
+        "average_precision": average_precision_score(y_true, probability)
+        if two_classes else np.nan,
+        "brier": brier_score_loss(y_true, probability),
+        "f1": f1_score(y_true, prediction, zero_division=0),
+        "sensitivity": tp / (tp + fn) if tp + fn else np.nan,
+        "specificity": tn / (tn + fp) if tn + fp else np.nan,
+    }
+
+
+def run_experiment(
+    model_name, estimator, split_type, repo_root, output_dir, use_coords=True
+):
+    """Fit one cloned estimator per species and save standard outputs."""
+    config = load_config()
+    predictors = get_predictors(use_coords)
+    target = config["target"]
+    species_col = config["species"]
+    group = config["group"]
+    id_col = config["id"]
+    train, test = load_split(repo_root, split_type)
+
+    prediction_tables = []
+    metric_rows = []
+    for species in sorted(train[species_col].unique()):
+        train_sp = train[train[species_col] == species].copy()
+        test_sp = test[test[species_col] == species].copy()
+        pipeline = Pipeline([
+            ("preprocess", make_preprocessor(use_coords)),
+            ("model", clone(estimator)),
+        ])
+        pipeline.fit(train_sp[predictors], train_sp[target].astype(int))
+        probability = np.clip(
+            pipeline.predict_proba(test_sp[predictors])[:, 1], 1e-6, 1 - 1e-6
+        )
+
+        metric_rows.append({
+            "model": model_name,
+            "split_type": split_type,
+            "use_coords": use_coords,
+            "species": species,
+            **evaluate(test_sp[target], probability),
+        })
+        prediction_tables.append(pd.DataFrame({
+            "plot": test_sp[group].to_numpy(),
+            "id": test_sp[id_col].to_numpy(),
+            "species": species,
+            "model": model_name,
+            "split_type": split_type,
+            "use_coords": use_coords,
+            "y_true": test_sp[target].astype(int).to_numpy(),
+            "y_prob": probability,
+            "easting": test_sp["easting"].to_numpy(),
+            "northing": test_sp["northing"].to_numpy(),
+        }))
+
+    predictions = pd.concat(prediction_tables, ignore_index=True)
+    metrics = pd.DataFrame(metric_rows)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    predictions.to_csv(output_dir / f"{model_name}_{split_type}_predictions.csv", index=False)
+    metrics.to_csv(output_dir / f"{model_name}_{split_type}_metrics.csv", index=False)
+    return predictions, metrics
+
+
+def run_tuned_experiment(
+    model_name,
+    estimator,
+    param_grid,
+    split_type,
+    repo_root,
+    output_dir,
+    n_splits=None,
+    selection_metric=None,
+    use_coords=True,
+):
+    """Tune each species on training plots only, then test exactly once.
+
+    Parameter names refer to the complete pipeline. For example, when the
+    supplied estimator is a Pipeline with ``splines`` and ``classifier`` steps,
+    use ``model__splines__n_knots`` and ``model__classifier__C``.
+    """
+    config = load_config()
+    tuning = config["tuning"]
+    n_splits = tuning["n_splits"] if n_splits is None else n_splits
+    selection_metric = (
+        tuning["selection_metric"]
+        if selection_metric is None
+        else selection_metric
+    )
+    if tuning["scope"] != "training_only":
+        raise ValueError("Tuning scope must be training_only")
+    if tuning["cv_method"] != "stratified_group_k_fold":
+        raise ValueError("Unsupported shared CV method")
+    if selection_metric != "log_loss" or tuning["selection_direction"] != "minimize":
+        raise ValueError("The shared protocol selects by minimum log_loss")
+    if not tuning["refit_on_full_training_set"] or not tuning["evaluate_test_once"]:
+        raise ValueError("Task 5 requires full-train refit and one final test evaluation")
+
+    predictors = get_predictors(use_coords)
+    target = config["target"]
+    species_col = config["species"]
+    group_col = config["group"]
+    id_col = config["id"]
+    seed = config["random_seed"]
+    train, test = load_split(repo_root, split_type)
+
+    prediction_tables = []
+    metric_rows = []
+    cv_rows = []
+    best_param_rows = []
+
+    for species in sorted(train[species_col].unique()):
+        train_sp = train[train[species_col] == species].reset_index(drop=True)
+        test_sp = test[test[species_col] == species].reset_index(drop=True)
+        X_train = train_sp[predictors]
+        y_train = train_sp[target].astype(int)
+        groups = train_sp[group_col]
+
+        splitter = StratifiedGroupKFold(
+            n_splits=n_splits,
+            shuffle=True,
+            random_state=seed,
+        )
+        candidates = []
+
+        for candidate_number, params in enumerate(ParameterGrid(param_grid), start=1):
+            fold_losses = []
+            for fold, (fit_index, validation_index) in enumerate(
+                splitter.split(X_train, y_train, groups), start=1
+            ):
+                pipeline = Pipeline([
+                    ("preprocess", make_preprocessor(use_coords)),
+                    ("model", clone(estimator)),
+                ])
+                pipeline.set_params(**params)
+                pipeline.fit(X_train.iloc[fit_index], y_train.iloc[fit_index])
+                probability = np.clip(
+                    pipeline.predict_proba(X_train.iloc[validation_index])[:, 1],
+                    1e-6,
+                    1 - 1e-6,
+                )
+                fold_metrics = evaluate(y_train.iloc[validation_index], probability)
+                fold_losses.append(fold_metrics[selection_metric])
+                cv_rows.append({
+                    "model": model_name,
+                    "split_type": split_type,
+                    "use_coords": use_coords,
+                    "species": species,
+                    "candidate": candidate_number,
+                    "fold": fold,
+                    **params,
+                    **fold_metrics,
+                })
+
+            candidates.append({
+                "params": params,
+                "mean_log_loss": float(np.mean(fold_losses)),
+                "std_log_loss": float(np.std(fold_losses)),
+            })
+
+        best = min(candidates, key=lambda row: row["mean_log_loss"])
+        best_params = best["params"]
+        best_param_rows.append({
+            "model": model_name,
+            "split_type": split_type,
+            "use_coords": use_coords,
+            "species": species,
+            **best_params,
+            "mean_cv_log_loss": best["mean_log_loss"],
+            "std_cv_log_loss": best["std_log_loss"],
+        })
+
+        final_pipeline = Pipeline([
+            ("preprocess", make_preprocessor(use_coords)),
+            ("model", clone(estimator)),
+        ])
+        final_pipeline.set_params(**best_params)
+        final_pipeline.fit(X_train, y_train)
+        probability = np.clip(
+            final_pipeline.predict_proba(test_sp[predictors])[:, 1],
+            1e-6,
+            1 - 1e-6,
+        )
+
+        metric_rows.append({
+            "model": model_name,
+            "split_type": split_type,
+            "use_coords": use_coords,
+            "species": species,
+            **evaluate(test_sp[target], probability),
+        })
+        prediction_tables.append(pd.DataFrame({
+            "plot": test_sp[group_col].to_numpy(),
+            "id": test_sp[id_col].to_numpy(),
+            "species": species,
+            "model": model_name,
+            "split_type": split_type,
+            "use_coords": use_coords,
+            "y_true": test_sp[target].astype(int).to_numpy(),
+            "y_prob": probability,
+            "easting": test_sp["easting"].to_numpy(),
+            "northing": test_sp["northing"].to_numpy(),
+        }))
+
+    predictions = pd.concat(prediction_tables, ignore_index=True)
+    metrics = pd.DataFrame(metric_rows)
+    cv_results = pd.DataFrame(cv_rows)
+    best_params = pd.DataFrame(best_param_rows)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prefix = f"{model_name}_{split_type}"
+    predictions.to_csv(output_dir / f"{prefix}_predictions.csv", index=False)
+    metrics.to_csv(output_dir / f"{prefix}_metrics.csv", index=False)
+    cv_results.to_csv(output_dir / f"{prefix}_cv_results.csv", index=False)
+    best_params.to_csv(output_dir / f"{prefix}_best_params.csv", index=False)
+    return predictions, metrics, cv_results, best_params
