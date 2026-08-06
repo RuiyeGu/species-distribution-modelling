@@ -1,12 +1,12 @@
 {
   "splits": {
     "spatial": {
-      "train": "Split data/spatial_train.csv",
-      "test": "Split data/spatial_test.csv"
+      "train": "spatial_train.csv",
+      "test": "spatial_test.csv"
     },
     "random": {
-      "train": "Split data/random_train.csv",
-      "test": "Split data/random_test.csv"
+      "train": "random_train.csv",
+      "test": "random_test.csv"
     }
   },
   "predictors": [
@@ -36,6 +36,16 @@
     "sensitivity",
     "specificity"
   ],
+  "tuning": {
+    "scope": "training_only",
+    "cv_method": "stratified_group_k_fold",
+    "n_splits": 5,
+    "group_column": "plot",
+    "selection_metric": "log_loss",
+    "selection_direction": "minimize",
+    "refit_on_full_training_set": true,
+    "evaluate_test_once": true
+  },
   "threshold": 0.5,
   "random_seed": 42
 }
