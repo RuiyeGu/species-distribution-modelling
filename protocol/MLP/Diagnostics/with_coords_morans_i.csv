@@ -23,11 +23,11 @@ MLP_single_with_coords,Coeranoscincus reticulatus,random,128,8,999,-0.0137110502
 MLP_single_with_coords,Coeranoscincus reticulatus,spatial,128,8,999,0.32659141706021455,0.001
 MLP_single_with_coords,Egernia mcpheei,random,128,8,999,0.026423035142204464,0.451
 MLP_single_with_coords,Egernia mcpheei,spatial,128,8,999,-0.0016017211714397612,0.959
-MLP_single_with_coords,Eulamprus murrayi,random,128,8,999,-9.426247799448433e-05,0.996
-MLP_single_with_coords,Eulamprus murrayi,spatial,128,8,999,0.4282544690621192,0.001
-MLP_single_with_coords,Ophioscincus truncatus,random,128,8,999,0.005875702177797525,0.894
+MLP_single_with_coords,Eulamprus murrayi,random,128,8,999,-0.00034155725938368563,0.994
+MLP_single_with_coords,Eulamprus murrayi,spatial,128,8,999,0.5694643562762396,0.001
+MLP_single_with_coords,Ophioscincus truncatus,random,128,8,999,0.02377799945552606,0.581
 MLP_single_with_coords,Ophioscincus truncatus,spatial,128,8,999,0.07190118906315121,0.062
-MLP_single_with_coords,Pseudechis porphyricaus,random,128,8,999,0.006813738240435738,0.769
+MLP_single_with_coords,Pseudechis porphyricaus,random,128,8,999,0.0023766881656880397,0.913
 MLP_single_with_coords,Pseudechis porphyricaus,spatial,128,8,999,-0.019639013151867484,0.337
-MLP_single_with_coords,Saltuarius swaini,random,128,8,999,-0.041436364092140805,0.035
-MLP_single_with_coords,Saltuarius swaini,spatial,128,8,999,0.9198970659644817,0.001
+MLP_single_with_coords,Saltuarius swaini,random,128,8,999,-0.03476009627394961,0.004
+MLP_single_with_coords,Saltuarius swaini,spatial,128,8,999,0.7494569338419813,0.001
