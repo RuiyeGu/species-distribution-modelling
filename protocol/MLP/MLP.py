@@ -57,18 +57,27 @@ SEED = CONFIG["random_seed"]
 N_SPLITS = CONFIG["tuning"]["n_splits"]
 MAX_ITER = 500
 
+# Shared across both grids on purpose: if the single and multi paths tune over
+# different alpha ranges the single-vs-multi comparison stops being like-for-like.
+# The range extends past 0.1 because with the earlier [1e-4 .. 1e-1] grid the
+# single path selected the 0.1 ceiling in 27 of 32 fits (8/8 in both no_coords
+# cells), i.e. tuning wanted more regularisation than the grid could offer.
+HIDDEN_LAYER_SIZES = [(8,), (16,), (32,), (16, 8)]
+ALPHAS = [1e-4, 1e-3, 1e-2, 1e-1, 3e-1, 1.0]
+LEARNING_RATE_INIT = [1e-2, 1e-3]
+
 # Single-species grid (parameters address the protocol pipeline's "model" step).
 MLP_PARAM_GRID = {
-    "model__hidden_layer_sizes": [(8,), (16,), (32,), (16, 8)],
-    "model__alpha": [1e-4, 1e-3, 1e-2, 1e-1],
-    "model__learning_rate_init": [1e-2, 1e-3],
+    "model__hidden_layer_sizes": HIDDEN_LAYER_SIZES,
+    "model__alpha": ALPHAS,
+    "model__learning_rate_init": LEARNING_RATE_INIT,
 }
 
 # Multi-species grid (parameters address the "classifier" step of make_multi_mlp).
 MLP_MULTI_GRID = {
-    "classifier__hidden_layer_sizes": [(8,), (16,), (32,), (16, 8)],
-    "classifier__alpha": [1e-4, 1e-3, 1e-2, 1e-1],
-    "classifier__learning_rate_init": [1e-2, 1e-3],
+    "classifier__hidden_layer_sizes": HIDDEN_LAYER_SIZES,
+    "classifier__alpha": ALPHAS,
+    "classifier__learning_rate_init": LEARNING_RATE_INIT,
 }
 
 

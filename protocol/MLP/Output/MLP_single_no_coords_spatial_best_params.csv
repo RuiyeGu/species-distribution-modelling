@@ -1,9 +1,9 @@
 model,split_type,use_coords,species,model__alpha,model__hidden_layer_sizes,model__learning_rate_init,mean_cv_log_loss,std_cv_log_loss
-MLP_single_no_coords,spatial,False,Cacophis kreftii,0.1,"(16,)",0.001,0.14151669660100955,0.020626842505087655
+MLP_single_no_coords,spatial,False,Cacophis kreftii,1.0,"(16, 8)",0.001,0.14119843677745972,0.017729083309272038
 MLP_single_no_coords,spatial,False,Calyptotis scutirostrum,0.1,"(8,)",0.01,0.16383873741159505,0.04357069012400722
 MLP_single_no_coords,spatial,False,Coeranoscincus reticulatus,0.1,"(16, 8)",0.01,0.2954783269799154,0.024629329929556784
 MLP_single_no_coords,spatial,False,Egernia mcpheei,0.1,"(32,)",0.01,0.0465424995307817,0.01945141342214837
-MLP_single_no_coords,spatial,False,Eulamprus murrayi,0.1,"(8,)",0.001,0.04414934033700994,0.024388895297628308
+MLP_single_no_coords,spatial,False,Eulamprus murrayi,1.0,"(8,)",0.01,0.03892436461403333,0.021662176953960523
 MLP_single_no_coords,spatial,False,Ophioscincus truncatus,0.1,"(32,)",0.01,0.40129368939032284,0.04060842468160564
 MLP_single_no_coords,spatial,False,Pseudechis porphyricaus,0.1,"(16,)",0.01,0.0983769446512511,0.0177275049065378
-MLP_single_no_coords,spatial,False,Saltuarius swaini,0.1,"(8,)",0.001,0.0881443359229132,0.027833291906668816
+MLP_single_no_coords,spatial,False,Saltuarius swaini,1.0,"(16,)",0.01,0.08306129339752576,0.017696036950417892
