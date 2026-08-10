@@ -1,26 +1,4 @@
-"""Tasks 5-7 for the MLP family, on the shared protocol.
 
-Mirrors protocol/XGBoost/XGBoost.py and protocol/GAM/GAM.py so the MLP is
-evaluated identically to the other four families: the same fixed spatial and
-random plot-level splits, the same predictors, the same StratifiedGroupKFold
-tuning-on-training-only, and the same one-final-test-evaluation rule.
-
-Two MLP-specific points, both deliberate:
-
-  * Scaling is mandatory. Unlike the tree families, an MLP is scale-sensitive,
-    so the environmental predictors are StandardScaled in BOTH the single-species
-    path (via the protocol's make_preprocessor) and the multi-species path (via
-    MultiMLPTransformer below). One-hot Species columns are left unscaled.
-  * A single multi-species formulation. The trees add a "multi_interactions"
-    variant; an MLP already learns feature interactions internally, so only the
-    species-as-covariate "multi" formulation is run, matching the shared
-    single-vs-multi comparison the other families report.
-
-Unlike the sibling scripts, main() loops over BOTH coordinate settings in one
-invocation (no need to toggle a top-level constant and re-run); output filenames
-are identical to the other families, so downstream joins and the diagnostics
-driver are unaffected.
-"""
 
 import argparse
 import sys
