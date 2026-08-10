@@ -1,2 +1,0 @@
-model,split_type,use_coords,classifier__alpha,classifier__hidden_layer_sizes,classifier__learning_rate_init,mean_cv_log_loss,std_cv_log_loss
-MLP_multi_interactions_with_coords,spatial,True,0.1,"(16,)",0.001,0.15278210863575897,0.01110632846979862

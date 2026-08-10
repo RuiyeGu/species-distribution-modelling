@@ -1,9 +1,0 @@
-model,split_type,use_coords,species,model__alpha,model__hidden_layer_sizes,model__learning_rate_init,mean_cv_log_loss,std_cv_log_loss
-MLP_single_with_coords,random,True,Cacophis kreftii,0.1,"(8,)",0.01,0.10189908927009408,0.03133975804297663
-MLP_single_with_coords,random,True,Calyptotis scutirostrum,0.1,"(8,)",0.01,0.1475444970527962,0.037104303153410186
-MLP_single_with_coords,random,True,Coeranoscincus reticulatus,0.1,"(32,)",0.01,0.2804072002835213,0.03981781608593865
-MLP_single_with_coords,random,True,Egernia mcpheei,0.1,"(16,)",0.01,0.07369760014452602,0.03626926179187354
-MLP_single_with_coords,random,True,Eulamprus murrayi,0.1,"(16, 8)",0.01,0.025360543786162558,0.025948209815681744
-MLP_single_with_coords,random,True,Ophioscincus truncatus,0.1,"(16, 8)",0.001,0.37392379108878354,0.012974546384178252
-MLP_single_with_coords,random,True,Pseudechis porphyricaus,0.1,"(32,)",0.01,0.0882161286144483,0.023755923907423433
-MLP_single_with_coords,random,True,Saltuarius swaini,0.1,"(8,)",0.01,0.07877027384847632,0.04337985813906632
