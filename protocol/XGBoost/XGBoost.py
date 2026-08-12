@@ -48,8 +48,8 @@ def one_hot_encoder():
 class MultiXGBoostTransformer(BaseEstimator, TransformerMixin):
     """Training-fitted environmental splines plus Species effects/interactions."""
 
-    def __init__(self):
-        pass
+    def __init__(self, interactions=False):
+        self.interactions = interactions
 
     def fit(self, X, y=None):
         self.imputer_ = SimpleImputer(strategy="median").fit(
@@ -71,9 +71,18 @@ class MultiXGBoostTransformer(BaseEstimator, TransformerMixin):
             X[[SPECIES]]
         )
 
+        if not self.interactions:
+            return np.hstack([
+                environment,
+                species,
+            ])
+        products = (environment[:, :, None] * species[:, None, :]).reshape(
+            len(X), -1
+        )
         return np.hstack([
             environment,
             species,
+            products,
         ])
 
 
@@ -87,11 +96,11 @@ def make_single_xgboost():
     )
 
 
-def make_multi_xgboost():
+def make_multi_xgboost(interactions=False):
     return Pipeline([
         (
             "features",
-            MultiXGBoostTransformer(),
+            MultiXGBoostTransformer(interactions=interactions),
         ),
         (
             "classifier",
@@ -105,8 +114,9 @@ def make_multi_xgboost():
         ),
     ])
 
-def tune_multi(train, test, split_type, approach, output_dir):
-    model = make_multi_xgboost()
+def tune_multi(train, test, split_type, approach, output_dir,
+               interactions=False):
+    model = make_multi_xgboost(interactions=interactions)
     grid = {
         "classifier__n_estimators": [100, 300],
         "classifier__max_depth": [3, 5],
@@ -233,10 +243,11 @@ def main():
                 split_type,
                 approach,
                 output_dir,
+                interactions=interactions,
             )
 
-        all_predictions.append(predictions)
-        all_metrics.append(metrics)
+            all_predictions.append(predictions)
+            all_metrics.append(metrics)
 
     predictions = pd.concat(all_predictions, ignore_index=True)
     metrics = pd.concat(all_metrics, ignore_index=True)
