@@ -72,9 +72,8 @@ def make_single_mlp():
 class MultiMLPTransformer(BaseEstimator, TransformerMixin):
 
 
-    def __init__(self, env_features, interactions=False):
+    def __init__(self, env_features):
         self.env_features = env_features
-        self.interactions = interactions
 
     def fit(self, X, y=None):
         self.imputer_ = SimpleImputer(strategy="median").fit(X[self.env_features])
@@ -88,16 +87,12 @@ class MultiMLPTransformer(BaseEstimator, TransformerMixin):
             self.imputer_.transform(X[self.env_features])
         )
         species = self.species_.transform(X[[SPECIES]])
-        if not self.interactions:
-            return np.hstack([environment, species])
-        products = (environment[:, :, None] * species[:, None, :]).reshape(
-            len(X), -1)
-        return np.hstack([environment, species, products])
+        return np.hstack([environment, species])
 
 
-def make_multi_mlp(env_features, interactions=False):
+def make_multi_mlp(env_features):
     return Pipeline([
-        ("features", MultiMLPTransformer(env_features, interactions=interactions)),
+        ("features", MultiMLPTransformer(env_features)),
         ("classifier", MLPClassifier(
             activation="relu",
             solver="adam",
@@ -107,10 +102,9 @@ def make_multi_mlp(env_features, interactions=False):
     ])
 
 
-def tune_multi(train, test, split_type, approach, output_dir, use_coords,
-               interactions=False):
+def tune_multi(train, test, split_type, approach, output_dir, use_coords):
     env_features = get_predictors(use_coords)
-    model = make_multi_mlp(env_features, interactions=interactions)
+    model = make_multi_mlp(env_features)
 
     X_train = train[[SPECIES] + env_features].reset_index(drop=True)
     y_train = train[TARGET].astype(int).reset_index(drop=True)
@@ -317,19 +311,14 @@ def run_for_coords(use_coords, repo_root, output_dir):
         all_predictions.append(single_predictions)
         all_metrics.append(single_metrics)
 
-        for approach, interactions in [
-            (f"MLP_multi_{coordinate_label}", False),
-            (f"MLP_multi_interactions_{coordinate_label}", True),
-        ]:
-            multi_predictions, multi_metrics, _, _ = tune_multi(
-                train, test, split_type,
-                approach=approach,
-                output_dir=output_dir,
-                use_coords=use_coords,
-                interactions=interactions,
-            )
-            all_predictions.append(multi_predictions)
-            all_metrics.append(multi_metrics)
+        multi_predictions, multi_metrics, _, _ = tune_multi(
+            train, test, split_type,
+            approach=f"MLP_multi_{coordinate_label}",
+            output_dir=output_dir,
+            use_coords=use_coords,
+        )
+        all_predictions.append(multi_predictions)
+        all_metrics.append(multi_metrics)
 
         trunk_predictions, trunk_metrics, _, _ = tune_multi_trunk(
             train, test, split_type,
