@@ -1,0 +1,31 @@
+coord,split,family,formulation,log_loss,ci_lo,ci_hi
+with_coords,random,Logistic Regression,single,0.1887,0.1533,0.2288
+with_coords,random,GAM,single,0.1735,0.1447,0.2123
+with_coords,random,Random Forest,single,0.1988,0.1563,0.2474
+with_coords,random,XGBoost,single,0.1603,0.1308,0.1972
+with_coords,random,MLP,single,0.1943,0.1496,0.2477
+with_coords,random,Logistic Regression,multi,0.2057,0.1697,0.2479
+with_coords,random,GAM,multi,0.1963,0.1632,0.236
+with_coords,random,Random Forest,multi,0.1982,0.1575,0.2437
+with_coords,random,XGBoost,multi,0.1655,0.1353,0.2029
+with_coords,random,MLP,multi,0.1688,0.1393,0.2069
+with_coords,random,Logistic Regression,multi_interactions,0.1864,0.1528,0.2257
+with_coords,random,GAM,multi_interactions,0.1695,0.1403,0.2077
+with_coords,random,Random Forest,multi_interactions,0.1942,0.1599,0.2386
+with_coords,random,XGBoost,multi_interactions,0.1656,0.1325,0.2054
+with_coords,random,MLP,multi_interactions,0.1707,0.1392,0.2076
+with_coords,spatial,Logistic Regression,single,0.1919,0.1613,0.221
+with_coords,spatial,GAM,single,0.1953,0.1655,0.2256
+with_coords,spatial,Random Forest,single,0.2278,0.1848,0.2754
+with_coords,spatial,XGBoost,single,0.2073,0.1678,0.2494
+with_coords,spatial,MLP,single,0.2337,0.1876,0.281
+with_coords,spatial,Logistic Regression,multi,0.2157,0.1867,0.248
+with_coords,spatial,GAM,multi,0.2171,0.1858,0.2499
+with_coords,spatial,Random Forest,multi,0.2444,0.2185,0.2752
+with_coords,spatial,XGBoost,multi,0.2015,0.1722,0.2322
+with_coords,spatial,MLP,multi,0.1946,0.1587,0.2301
+with_coords,spatial,Logistic Regression,multi_interactions,0.1906,0.1607,0.2192
+with_coords,spatial,GAM,multi_interactions,0.1967,0.1673,0.2262
+with_coords,spatial,Random Forest,multi_interactions,0.2403,0.2138,0.272
+with_coords,spatial,XGBoost,multi_interactions,0.2028,0.1707,0.2357
+with_coords,spatial,MLP,multi_interactions,0.2018,0.168,0.2392
