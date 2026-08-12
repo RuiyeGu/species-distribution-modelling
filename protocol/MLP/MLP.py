@@ -31,18 +31,21 @@ SEED = CONFIG["random_seed"]
 N_SPLITS = CONFIG["tuning"]["n_splits"]
 MAX_ITER = 500
 
+# Shared across both grids on purpose: if the single and multi paths tune over
+# different alpha ranges the single-vs-multi comparison stops being like-for-like.
+# The range extends past 0.1 because with the earlier [1e-4 .. 1e-1] grid the
+# single path selected the 0.1 ceiling in 27 of 32 fits (8/8 in both no_coords
+# cells), i.e. tuning wanted more regularisation than the grid could offer.
 HIDDEN_LAYER_SIZES = [(8,), (16,), (32,), (16, 8)]
 ALPHAS = [1e-4, 1e-3, 1e-2, 1e-1, 3e-1, 1.0]
 LEARNING_RATE_INIT = [1e-2, 1e-3]
 
-# Single-species grid (parameters address the protocol pipeline's "model" step).
 MLP_PARAM_GRID = {
     "model__hidden_layer_sizes": HIDDEN_LAYER_SIZES,
     "model__alpha": ALPHAS,
     "model__learning_rate_init": LEARNING_RATE_INIT,
 }
 
-# Multi-species grid (parameters address the "classifier" step of make_multi_mlp).
 MLP_MULTI_GRID = {
     "classifier__hidden_layer_sizes": HIDDEN_LAYER_SIZES,
     "classifier__alpha": ALPHAS,
@@ -100,7 +103,6 @@ def make_multi_mlp(env_features):
 
 
 def tune_multi(train, test, split_type, approach, output_dir, use_coords):
-    """Tune the species-as-covariate MLP on training plots only, then test once."""
     env_features = get_predictors(use_coords)
     model = make_multi_mlp(env_features)
 
@@ -185,6 +187,111 @@ def tune_multi(train, test, split_type, approach, output_dir, use_coords):
     return predictions, metrics, cv_results, best_params
 
 
+from sklearn.model_selection import KFold
+
+MLP_TRUNK_GRID = {
+    "classifier__hidden_layer_sizes": [(8,), (16,), (32,), (16, 8)],
+    "classifier__alpha": ALPHAS,
+    "classifier__learning_rate_init": [1e-2, 1e-3],
+}
+
+
+def to_wide(frame, env_features):
+    features = (frame.drop_duplicates(GROUP)
+                .set_index(GROUP)[env_features + ["easting", "northing"]])
+    features = features.loc[:, ~features.columns.duplicated()]
+    targets = frame.pivot(index=GROUP, columns=SPECIES, values=TARGET)
+    ids = frame.pivot(index=GROUP, columns=SPECIES, values=ID)
+    return features.join(targets, rsuffix="_y"), targets, ids
+
+
+def make_trunk_mlp(env_features):
+    return Pipeline([
+        ("impute", SimpleImputer(strategy="median")),
+        ("scale", StandardScaler()),
+        ("classifier", MLPClassifier(activation="relu", solver="adam",
+                                     max_iter=MAX_ITER, random_state=SEED)),
+    ])
+
+
+def _trunk_proba(model, X, n_species):
+    proba = model.predict_proba(X)
+    proba = np.asarray(proba)
+    if proba.ndim == 3:  # some versions return a list of per-output arrays
+        proba = np.stack([p[:, 1] for p in proba], axis=1)
+    return proba[:, :n_species]
+
+
+def tune_multi_trunk(train, test, split_type, approach, output_dir, use_coords):
+    env_features = get_predictors(use_coords)
+    species_names = sorted(train[SPECIES].unique())
+    n_species = len(species_names)
+
+    wide_train, y_train_df, _ = to_wide(train, env_features)
+    wide_test, y_test_df, id_test_df = to_wide(test, env_features)
+    X_train = wide_train[env_features].to_numpy(dtype=float)
+    Y_train = y_train_df[species_names].to_numpy(dtype=int)
+    X_test = wide_test[env_features].to_numpy(dtype=float)
+
+    model = make_trunk_mlp(env_features)
+    splitter = KFold(n_splits=N_SPLITS, shuffle=True, random_state=SEED)
+
+    cv_rows, candidates = [], []
+    for candidate, params in enumerate(ParameterGrid(MLP_TRUNK_GRID), start=1):
+        losses = []
+        for fold, (fit_idx, val_idx) in enumerate(splitter.split(X_train), start=1):
+            fitted = clone(model).set_params(**params)
+            fitted.fit(X_train[fit_idx], Y_train[fit_idx])
+            proba = _trunk_proba(fitted, X_train[val_idx], n_species)
+            metrics = evaluate(Y_train[val_idx].ravel(), proba.ravel())
+            losses.append(metrics["log_loss"])
+            cv_rows.append({"model": approach, "split_type": split_type,
+                            "use_coords": use_coords, "candidate": candidate,
+                            "fold": fold, **params, **metrics})
+        candidates.append({"params": params,
+                           "mean_cv_log_loss": float(np.mean(losses)),
+                           "std_cv_log_loss": float(np.std(losses))})
+
+    best = min(candidates, key=lambda row: row["mean_cv_log_loss"])
+    final_model = clone(model).set_params(**best["params"])
+    final_model.fit(X_train, Y_train)
+    proba = np.clip(_trunk_proba(final_model, X_test, n_species), 1e-6, 1 - 1e-6)
+
+    records = []
+    for row, plot in enumerate(wide_test.index):
+        for col, species in enumerate(species_names):
+            records.append({
+                "plot": plot,
+                "id": id_test_df.loc[plot, species],
+                "species": species,
+                "model": approach,
+                "split_type": split_type,
+                "use_coords": use_coords,
+                "y_true": int(y_test_df.loc[plot, species]),
+                "y_prob": float(proba[row, col]),
+                "easting": wide_test.loc[plot, "easting"],
+                "northing": wide_test.loc[plot, "northing"],
+            })
+    predictions = pd.DataFrame(records)
+
+    metric_rows = [{"model": approach, "split_type": split_type,
+                    "use_coords": use_coords, "species": species,
+                    **evaluate(group["y_true"], group["y_prob"])}
+                   for species, group in predictions.groupby("species")]
+    metrics = pd.DataFrame(metric_rows)
+    best_params = pd.DataFrame([{"model": approach, "split_type": split_type,
+                                 "use_coords": use_coords, **best["params"],
+                                 "mean_cv_log_loss": best["mean_cv_log_loss"],
+                                 "std_cv_log_loss": best["std_cv_log_loss"]}])
+
+    prefix = f"{approach}_{split_type}"
+    predictions.to_csv(output_dir / f"{prefix}_predictions.csv", index=False)
+    metrics.to_csv(output_dir / f"{prefix}_metrics.csv", index=False)
+    pd.DataFrame(cv_rows).to_csv(output_dir / f"{prefix}_cv_results.csv", index=False)
+    best_params.to_csv(output_dir / f"{prefix}_best_params.csv", index=False)
+    return predictions, metrics, pd.DataFrame(cv_rows), best_params
+
+
 def run_for_coords(use_coords, repo_root, output_dir):
     coordinate_label = "with_coords" if use_coords else "no_coords"
     all_predictions = []
@@ -213,6 +320,15 @@ def run_for_coords(use_coords, repo_root, output_dir):
         all_predictions.append(multi_predictions)
         all_metrics.append(multi_metrics)
 
+        trunk_predictions, trunk_metrics, _, _ = tune_multi_trunk(
+            train, test, split_type,
+            approach=f"MLP_multi_trunk_{coordinate_label}",
+            output_dir=output_dir,
+            use_coords=use_coords,
+        )
+        all_predictions.append(trunk_predictions)
+        all_metrics.append(trunk_metrics)
+
     predictions = pd.concat(all_predictions, ignore_index=True)
     metrics = pd.concat(all_metrics, ignore_index=True)
     predictions.to_csv(
@@ -231,7 +347,7 @@ def run_for_coords(use_coords, repo_root, output_dir):
 
 def main():
     script_dir = Path(__file__).resolve().parent
-    repo_root = script_dir.parents[1]  
+    repo_root = script_dir.parents[1]  # protocol/MLP -> repo root
     default_data = repo_root / "Split data" / "dataset"
 
     parser = argparse.ArgumentParser()
